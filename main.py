@@ -20,6 +20,9 @@ pygame.display.set_icon(pygame.image.load("image/icon.png"))
 
 # Створюємо об'єкти
 grid = grid.Grid() # ігрове поле
+test_piece = piece.SingleBlock()
+test_piece2 = piece.TShape() 
+test_piece3 = piece.LShape() 
 menu = Menu(screen, clock, SCREEN_WIDTH, SCREEN_HEIGHT, BACKGROUND_IMAGE)
 
 # Показуємо заставку та меню
@@ -35,6 +38,11 @@ while running:
     # код гри
     screen.fill(CARROT)
     grid.draw(screen)  # малюємо ігрове поле
+
+    test_piece.draw(screen, 1000, 200, 50)
+    test_piece2.draw(screen, 950, 270, 50)  
+    test_piece3.draw(screen, 975, 390, 50)  
+
     pygame.display.flip() # Оновлюємо екран
     clock.tick(60)
 pygame.quit()

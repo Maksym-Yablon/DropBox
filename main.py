@@ -20,8 +20,8 @@ BLUE = (0, 0, 255)
 KARATOVY = (255, 120, 18)
 CARROT = (255, 160, 48)
 # Розміри екрану
-SCREEN_WIDTH = 650
-SCREEN_HEIGHT = 650
+SCREEN_WIDTH = 800 # ширина екрану
+SCREEN_HEIGHT = 950 # висота екрану
 
 BACKGROUND_IMAGE = pygame.transform.scale(pygame.image.load("image/icon.png"), (SCREEN_WIDTH, SCREEN_HEIGHT))  # картинка фону, з маштабуванням під розмір екрану
 

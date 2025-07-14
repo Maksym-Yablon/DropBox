@@ -1,10 +1,13 @@
 import pygame
+from main import SCREEN_WIDTH, SCREEN_HEIGHT
 class Grid:
-    def __init__(self, size=7):
+    def __init__(self, size=8):
         self.size = size
         self.cells = [[0 for _ in range(size)] for _ in range(size)]  # ігрова сітка
     
-    def draw(self, surface, cell_size=60, offset_x=50, offset_y=50):
+    def draw(self, surface, cell_size=60,):
+        offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
+        offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
         #малюємо сітку
         for row in range(self.size):
             for col in range(self.size):

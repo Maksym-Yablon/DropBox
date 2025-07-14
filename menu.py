@@ -53,7 +53,7 @@ class Menu:
         self.screen.fill(WHITE)
         self.screen.blit(self.background_image, (0, 0))
         pygame.display.update()
-        time.sleep(5)  # Очікування 5 секунд
+        #time.sleep(5)  # Очікування 5 секунд
 
         # Очищення екрану після заставки
         self.screen.fill(WHITE)

@@ -6,7 +6,7 @@ class Grid:
         self.size = size
         self.cells = [[0 for _ in range(size)] for _ in range(size)]  # ігрова сітка
     
-    def draw(self, surface, cell_size=60,):
+    def draw(self, surface, cell_size=50,):
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
         #малюємо сітку

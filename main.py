@@ -1,6 +1,13 @@
 import pygame
 from sys import exit
 
+# імпорт модулів
+import game
+import menu
+import grid
+
+
+
 # Константи
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -24,7 +31,7 @@ clock = pygame.time.Clock()
 
 screen.blit(BACKGROUND_IMAGE, (0, 0))
 
-
+# Основний цикл гри
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

@@ -1,11 +1,12 @@
 import pygame
 from sys import exit
 
-# імпорт модулів
+# імпорт модулів гри
 import game
-import menu
 import grid
-
+import piece
+import ui
+#-------------------
 
 
 # Константи

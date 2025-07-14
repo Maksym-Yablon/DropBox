@@ -1,15 +1,7 @@
 import pygame
 from sys import exit
 import time
-
-# Константи кольорів
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-KARATOVY = (255, 120, 18)
-CARROT = (255, 160, 48)
+from constants import*  # Імпорт констант
 
 class Menu:
     def __init__(self, screen, clock, screen_width, screen_height, background_image):

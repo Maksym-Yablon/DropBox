@@ -1,5 +1,6 @@
 import pygame
-from main import SCREEN_WIDTH, SCREEN_HEIGHT
+from constants import*  # Імпорт констант
+
 class Grid:
     def __init__(self, size=8):
         self.size = size

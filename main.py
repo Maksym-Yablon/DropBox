@@ -9,9 +9,7 @@ import grid
 import piece
 import ui
 from menu import Menu
-
 #-------------------
-
 
 # Ініціалізація Pygame
 pygame.init()

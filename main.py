@@ -13,6 +13,8 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+KARATOVY = (255, 120, 18)
+CARROT = (255, 160, 48)
 # Розміри екрану
 SCREEN_WIDTH = 650
 SCREEN_HEIGHT = 650
@@ -28,10 +30,10 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
 def draw_menu():
-    screen.fill(BLUE)  # Змінюємо фон меню на синій
+    screen.fill(CARROT)  
     font = pygame.font.Font(None, 50)
     play_button = pygame.Rect(SCREEN_WIDTH // 2 - 75, SCREEN_HEIGHT // 2 + 150, 150, 60)  # Розміщуємо кнопку трохи нижче
-    pygame.draw.rect(screen, GREEN, play_button)
+    pygame.draw.rect(screen, KARATOVY, play_button)
 
     # Центруємо текст всередині кнопки
     text = font.render("Грати", True, BLACK)
@@ -66,7 +68,7 @@ screen.fill(WHITE)
 pygame.display.update()
 
 # Основний цикл гри
-main_menu()  # Виклик меню після заставки
+play_button = draw_menu()  # Виклик меню після заставки
 
 while True:
     for event in pygame.event.get():

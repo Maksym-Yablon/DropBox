@@ -26,4 +26,7 @@ class Grid:
         cleared = 0
         for row in range(self.size):
             if self.is_row_full(row):
-    
+                for col in range(self.size):
+                    self.cells[row][col] = 0  # очищаємо клітинки
+                cleared += 1
+        return cleared

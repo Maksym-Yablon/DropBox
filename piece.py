@@ -129,6 +129,61 @@ class TShape(Piece):
         super().__init__(shape, color)
 
 
+class ZShape(Piece):
+    """Z-подібна фігура"""
+    
+    def __init__(self, color=PIECE_RED):  # Червоний колір
+        shape = [
+            [1, 1, 0],
+            [0, 1, 1]
+        ]
+        super().__init__(shape, color)
+
+
+class Cross(Piece):
+    """Хрест (плюс)"""
+    
+    def __init__(self, color=PIECE_GREEN):  # Зелений колір
+        shape = [
+            [0, 1, 0],
+            [1, 1, 1],
+            [0, 1, 0]
+        ]
+        super().__init__(shape, color)
+
+
+class Corner(Piece):
+    """Кутова фігура"""
+    
+    def __init__(self, color=PIECE_BLUE):  # Синій колір
+        shape = [
+            [1, 1],
+            [1, 0]
+        ]
+        super().__init__(shape, color)
+
+
+class Line3(Piece):
+    """Лінія з 3 блоків"""
+    
+    def __init__(self, color=PIECE_ORANGE):  # Помаранчевий колір
+        shape = [
+            [1, 1, 1]
+        ]
+        super().__init__(shape, color)
+
+
+class SmallT(Piece):
+    """Маленький T"""
+    
+    def __init__(self, color=PIECE_PINK):  # Рожевий колір
+        shape = [
+            [1, 1, 1],
+            [0, 1, 0]
+        ]
+        super().__init__(shape, color)
+
+
 # Список всіх доступних фігур
 PIECE_TYPES = [
     SingleBlock,
@@ -138,7 +193,12 @@ PIECE_TYPES = [
     Line2x1,
     Line3x1,
     LShape,
-    TShape
+    TShape,
+    ZShape,
+    Cross,
+    Corner,
+    Line3,
+    SmallT
 ]
 
 

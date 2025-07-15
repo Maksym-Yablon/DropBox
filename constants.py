@@ -8,10 +8,20 @@ SCREEN_HEIGHT = 700
 # Розміри клітинок
 GRID_CELL_SIZE = 50  # Розмір клітинки сітки
 PIECE_CELL_SIZE = 48  # Розмір клітинки для фігур
+PIECE_CONTAINER_CELL_SIZE = 35  # Менший розмір для фігур у контейнері
+
+# Параметри сітки
+GRID_SIZE = 8  # Розмір сітки 8x8
+GRID_COLS = GRID_SIZE
+GRID_ROWS = GRID_SIZE
+
+# Позиція сітки на екрані (центрована)
+GRID_X = (SCREEN_WIDTH - GRID_SIZE * GRID_CELL_SIZE) // 2
+GRID_Y = (SCREEN_HEIGHT - GRID_SIZE * GRID_CELL_SIZE) // 2
 
 # Контейнер для фігур
 PIECE_CONTAINER_WIDTH = 250
-PIECE_CONTAINER_HEIGHT = 500
+PIECE_CONTAINER_HEIGHT = 550  # Збільшено на 10% (500 * 1.1)
 
 # Відступи та поля
 PIECE_MARGIN = 1  # Відступ між блоками фігури
@@ -88,8 +98,10 @@ FONT_SIZE_LARGE = 48
 FONT_SIZE_MEDIUM = 32
 FONT_SIZE_SMALL = 24
 
-# Фонове зображення з масштабуванням під розмір екрану
-BACKGROUND_IMAGE = pygame.transform.scale(
-    pygame.image.load("image/icon.png"), 
-    (SCREEN_WIDTH, SCREEN_HEIGHT)
-)
+# ===== ФУНКЦІЇ =====
+def get_background_image():
+    """Повертає фонове зображення з масштабуванням під розмір екрану"""
+    return pygame.transform.scale(
+        pygame.image.load("image/icon.png"), 
+        (SCREEN_WIDTH, SCREEN_HEIGHT)
+    )

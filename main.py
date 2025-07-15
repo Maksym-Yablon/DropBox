@@ -1,11 +1,9 @@
 import pygame
 from sys import exit
-import time
 
 # Імпорт модулів гри
 from constants import *
 import grid as grid_module
-import piece
 from piece import PieceBox
 import ui
 from ui import ui_effects, GameOverScreen, GameUI, MenuSystem
@@ -25,7 +23,7 @@ game_ui = GameUI(screen)
 menu_system = MenuSystem(screen, clock)
 
 # Показуємо заставку та меню
-menu_system.main_menu_loop(records_manager, BACKGROUND_IMAGE)
+menu_system.main_menu_loop(records_manager, get_background_image())
 
 
 # Основний цикл гри (запускається після натискання "Грати")
@@ -44,13 +42,10 @@ def get_piece_at_mouse(mouse_pos):
     return piece_box.get_piece_at_mouse(mouse_pos[0], mouse_pos[1])
 
 
-def replace_used_piece(piece_index):
-    """Замінює використану фігуру на нову випадкову"""
-    piece_box.replace_piece(piece_index)
-
-
-# Створюємо коробку для фігур (розміщена праворуч від сітки)
-piece_box = PieceBox(1000, 100)
+# Створюємо коробку для фігур (центрована по висоті ігрового поля)
+grid_height = GRID_SIZE * GRID_CELL_SIZE
+container_center_y = GRID_Y + (grid_height - PIECE_CONTAINER_HEIGHT) // 2
+piece_box = PieceBox(1000, container_center_y)
 
 def show_game_over_screen():
     """Показує екран завершення гри з результатами"""
@@ -97,8 +92,10 @@ def reset_game():
     # Створюємо нову сітку
     grid = grid_module.Grid()
     
-    # Створюємо нову коробку з фігурами
-    piece_box = PieceBox(1000, 100)
+    # Створюємо нову коробку з фігурами (центрована по висоті ігрового поля)
+    grid_height = GRID_SIZE * GRID_CELL_SIZE
+    container_center_y = GRID_Y + (grid_height - PIECE_CONTAINER_HEIGHT) // 2
+    piece_box = PieceBox(1000, container_center_y)
     
     # Скидаємо стан перетягування
     dragging = False
@@ -122,6 +119,7 @@ while running:
                 # Також визначаємо, за який блок фігури взялися
                 piece_index, block_col, block_row = piece_box.get_block_position_in_piece(mouse_pos[0], mouse_pos[1])
                 
+                # Починаємо перетягування
                 dragging = True
                 dragged_piece = piece_box.pieces[clicked_piece_index]
                 dragged_piece_index = clicked_piece_index
@@ -129,6 +127,9 @@ while running:
                 drag_offset_y = offset_y
                 drag_block_col = block_col if block_col is not None else 0
                 drag_block_row = block_row if block_row is not None else 0
+                
+                # Повідомляємо piece_box про початок перетягування
+                piece_box.start_dragging(clicked_piece_index)
             
         elif event.type == pygame.MOUSEBUTTONUP:
             # Закінчити перетягування
@@ -140,16 +141,18 @@ while running:
                 target_grid_x = grid_x - drag_block_col
                 target_grid_y = grid_y - drag_block_row
                 
+                placed = False
                 # Перевіряємо, чи можна розмістити фігуру
                 if grid.can_place_piece(dragged_piece, target_grid_x, target_grid_y):
                     # Розміщуємо фігуру на сітці
                     grid.place_piece(dragged_piece, target_grid_x, target_grid_y)
                     grid.clear_lines()  # Перевіряємо на очищення ліній
-                    
-                    # Замінюємо використану фігуру на нову
-                    replace_used_piece(dragged_piece_index)
+                    placed = True
                 else:
                     print("❌ Неможливо розмістити фігуру тут")
+                
+                # Завершуємо перетягування з результатом (це замінить фігуру якщо placed=True)
+                piece_box.stop_dragging(placed)
             dragging = False
             dragged_piece = None
             dragged_piece_index = None
@@ -205,8 +208,14 @@ while running:
     # Якщо перетягуємо фігуру - малюємо її під мишею з урахуванням зміщення кліку
     if dragging and dragged_piece:
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        # Віднімаємо зміщення кліку, щоб фігура залишалася в тому ж місці відносно курсора
-        dragged_piece.draw(screen, mouse_x - drag_offset_x, mouse_y - drag_offset_y, PIECE_CELL_SIZE)
+        
+        # Розраховуємо скореговане зміщення через різницю розмірів
+        scale_factor = PIECE_CELL_SIZE / PIECE_CONTAINER_CELL_SIZE
+        scaled_offset_x = drag_offset_x * scale_factor
+        scaled_offset_y = drag_offset_y * scale_factor
+        
+        # Віднімаємо скореговане зміщення кліку
+        dragged_piece.draw(screen, mouse_x - scaled_offset_x, mouse_y - scaled_offset_y, PIECE_CELL_SIZE)
 
 
     # Перевірка на кінець гри
@@ -216,7 +225,7 @@ while running:
             reset_game()
         elif result == "menu":
             # Повертаємося до меню
-            menu_system.main_menu_loop(records_manager, BACKGROUND_IMAGE)
+            menu_system.main_menu_loop(records_manager, get_background_image())
             reset_game()
         elif result == "quit":
             running = False

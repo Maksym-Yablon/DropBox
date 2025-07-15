@@ -17,11 +17,17 @@ clock = pygame.time.Clock()
 pygame.display.set_caption("Drop Box")
 pygame.display.set_icon(pygame.image.load("image/icon.png"))
 
+# Додаємо шрифт для очок
+score_font = pygame.font.SysFont("Arial", 36, bold=True)
+
+
 # Створюємо об'єкти
 grid = grid.Grid() # ігрове поле
 test_piece = piece.SingleBlock()
 test_piece2 = piece.TShape() 
 test_piece3 = piece.LShape()
+
+
 
 
 menu = Menu(screen, clock, SCREEN_WIDTH, SCREEN_HEIGHT, BACKGROUND_IMAGE)
@@ -54,6 +60,10 @@ def get_piece_at_mouse(mouse_pos):
         return test_piece3
     
     return None  # Якщо не натиснули на жодну фігуру
+
+
+
+
 
 while running:
     for event in pygame.event.get():
@@ -98,6 +108,10 @@ while running:
     # код гри
     screen.fill(CARROT)
     grid.draw(screen)  # малюємо ігрове поле
+
+    # Відображаємо очки у верхньому лівому куті
+    score_text = score_font.render(f"Очки: {grid.score}", True, (0, 0, 0))
+    screen.blit(score_text, (30, 30))
 
     # Підсвічування під час перетягування
     if dragging and dragged_piece:

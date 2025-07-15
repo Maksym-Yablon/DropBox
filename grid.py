@@ -4,8 +4,11 @@ from constants import*  # Імпорт констант
 class Grid:
     def __init__(self, size=8):
         self.size = size
-        self.cells = [[0 for _ in range(size)] for _ in range(size)]  # ігрова сітка
+        self.cells = [[None for _ in range(size)] for _ in range(size)]  # ігрова сітка
         self.score = 0  # початковий рахунок
+        self.combo_multiplier = 1  # множник комбо
+        self.last_clear_success = False
+
     def draw(self, surface, cell_size=50):
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
@@ -17,18 +20,23 @@ class Grid:
                     offset_y + row * cell_size,
                     cell_size, cell_size
                 )
-                color = (255, 255, 255) if self.cells[row][col] == 0 else (100, 180, 255)
+                
+                if self.cells[row][col] is None:
+                    color = (125, 78, 23)  # Порожня клітинка
+                else:
+                    color = self.cells[row][col]  # Колір фігури
                 pygame.draw.rect(surface, color, rect)
-                pygame.draw.rect(surface, (50, 50, 50), rect, 1)  # рамка
+                pygame.draw.rect(surface, CARROT, rect, 1)  # рамка
+                
     # ПЕРЕВІРКА РЯДКІВ
     def is_row_full(self, row):
         # перевіряємо, чи рядок заповнений
-        return all(self.cells[row][col] != 0 for col in range(self.size))
+        return all(self.cells[row][col] is not None for col in range(self.size))
     
 
     def is_col_full(self, col):
         # перевіряємо, чи стовпець заповнений  
-        return all(self.cells[row][col] != 0 for row in range(self.size))    
+        return all(self.cells[row][col] is not None for row in range(self.size))    
     
     def clear_full_rows (self):
         # очищаємо заповнені рядки
@@ -36,7 +44,7 @@ class Grid:
         for row in range(self.size):
             if self.is_row_full(row):
                 for col in range(self.size):
-                    self.cells[row][col] = 0  # очищаємо клітинки
+                    self.cells[row][col] = None  # очищаємо клітинки до None
                 cleared += 1
         return cleared
     
@@ -46,30 +54,73 @@ class Grid:
         for col in range(self.size):
             if self.is_col_full(col):
                 for row in range(self.size):
-                    self.cells[row][col] = 0  # очищаємо клітинки
+                    self.cells[row][col] = None  # очищаємо клітинки до None
                 cleared += 1
         return cleared
     
     # ГОЛОВНА ФУНКЦІЯ ОЧИЩЕННЯ
     def clear_lines(self):
         """Очищає всі повні лінії (рядки + стовпці) і нараховує бали"""
-        cleared_rows = self.clear_full_rows()
-        cleared_cols = self.clear_full_cols()
+        # Спочатку знаходимо всі повні рядки та стовпці
+        full_rows = []
+        full_cols = []
         
-        total_cleared = cleared_rows + cleared_cols
+        # Знаходимо всі повні рядки
+        for row in range(self.size):
+            if self.is_row_full(row):
+                full_rows.append(row)
+        
+        # Знаходимо всі повні стовпці
+        for col in range(self.size):
+            if self.is_col_full(col):
+                full_cols.append(col)
+        
+        # Очищаємо всі знайдені рядки та стовпці одночасно
+        for row in full_rows:
+            for col in range(self.size):
+                self.cells[row][col] = None
+        
+        for col in full_cols:
+            for row in range(self.size):
+                self.cells[row][col] = None
+        
+        total_cleared = len(full_rows) + len(full_cols)
+        points = total_cleared * 10
+
+        # Бонуси за кілька ліній одночасно
+        bonus = 0
+        if total_cleared >= 2:
+            if total_cleared == 2:
+                bonus = 10
+            elif total_cleared == 3:
+                bonus = 20
+            else:
+                bonus = 30
+
+        # --- Комбо-множник ---
         if total_cleared > 0:
-            # Нараховуємо бали: 10 балів за кожну лінію
-            points = total_cleared * 10
-            self.score += points
-            print(f"Очищено {cleared_rows} рядків і {cleared_cols} стовпців. +{points} балів!")
+            if self.last_clear_success:
+                self.combo_multiplier += 1  # Збільшуємо множник
+            else:
+                self.combo_multiplier = 1  # Скидаємо множник
+            self.last_clear_success = True
+        else:
+            self.combo_multiplier = 1
+            self.last_clear_success = False
+
+        self.score += (points + bonus) * self.combo_multiplier
+
+        if total_cleared > 0:
+            print(f"Очищено {len(full_rows)} рядків і {len(full_cols)} стовпців. +{points} балів! Бонус: +{bonus}")
         
+
         return total_cleared
     
         # ТЕСТОВА ФУНКЦІЯ (для перевірки)
     def fill_test_line(self):
         """Заповнює перший рядок для тестування"""
         for col in range(self.size):
-            self.cells[0][col] = 1
+            self.cells[0][col] = (255, 0, 0)  # Червоний колір для тесту
             
     # ВАЛІДАЦІЯ РОЗМІЩЕННЯ ФІГУР
     def mouse_to_grid(self, mouse_x, mouse_y, cell_size=50):
@@ -98,7 +149,7 @@ class Grid:
                         return False
                     
                     # Перевіряємо, чи клітинка вільна
-                    if self.cells[target_row][target_col] != 0:
+                    if self.cells[target_row][target_col] is not None:
                         return False
         
         return True
@@ -107,15 +158,16 @@ class Grid:
         """Розміщує фігуру на сітці"""
         if not self.can_place_piece(piece, grid_x, grid_y):
             return False
-        
+
+
         # Розміщуємо фігуру
         for row in range(len(piece.shape)):
             for col in range(len(piece.shape[row])):
                 if piece.shape[row][col] == 1:
                     target_row = grid_y + row
                     target_col = grid_x + col
-                    self.cells[target_row][target_col] = 1
-        
+                    self.cells[target_row][target_col] = piece.color  # Зберігаємо колір фігури
+        self.score += 1
         return True
     
     def highlight_position(self, surface, grid_x, grid_y, piece, cell_size=50, valid=True):

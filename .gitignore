@@ -545,3 +545,18 @@ sounds/
 *.ogg
 
 # ===== END PYTHON SPECIFIC =====
+
+# ===== ARTIST WORK FILES =====
+# Робочі файли художника
+*.psd
+*.ai
+*.sketch
+*.xcf
+*.svg
+*.eps
+
+# Тимчасові графічні файли
+*_backup.*
+*_old.*
+temp_*.png
+draft_*.png

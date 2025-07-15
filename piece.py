@@ -134,7 +134,6 @@ PIECE_TYPES = [
 
 def generate_random_piece():
     """Генерує випадкову фігуру"""
-    import random
     piece_class = random.choice(PIECE_TYPES)
     return piece_class()
 

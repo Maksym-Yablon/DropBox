@@ -312,6 +312,13 @@ class GameUI:
         # Відображаємо найкращий рекорд
         record_text = self.record_font.render(f"Рекорд: {best_score}", True, TEXT_COLOR)
         self.screen.blit(record_text, (30, 80))
+        
+        # Показуємо просту підказку
+        hints_font = pygame.font.SysFont("Arial", 18)
+        hint_text = hints_font.render("N - Нова гра", True, (180, 180, 180))
+        hint_rect = hint_text.get_rect()
+        hint_rect.topright = (SCREEN_WIDTH - 30, 30)
+        self.screen.blit(hint_text, hint_rect)
 
 
 class MenuSystem:

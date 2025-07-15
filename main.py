@@ -164,12 +164,14 @@ while running:
                 # Оновлюємо позицію для відображення під мишею
         
         elif event.type == pygame.KEYDOWN:
-            # Приховані команди для налагодження (можна прибрати пізніше)
+            # Команди для налагодження
             if event.key == pygame.K_r:  # R - скидання сітки
                 for row in range(8):
                     for col in range(8):
                         grid.cells[row][col] = None
                 grid.score = 0
+            elif event.key == pygame.K_n:  # N - Нова гра
+                reset_game()
             
     # код гри
     screen.fill(BACKGROUND_COLOR)

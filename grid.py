@@ -1,16 +1,65 @@
 import pygame
+import random
 from constants import *
 
 
 class Grid:
     """Клас для управління ігровою сіткою 8x8"""
     
-    def __init__(self, size=8):
+    def __init__(self, size=8, generate_initial=True):
         self.size = size
         self.cells = [[None for _ in range(size)] for _ in range(size)]  # Ігрова сітка
         self.score = 0  # Поточний рахунок
         self.combo_multiplier = 1  # Множник комбо
         self.last_clear_success = False
+        
+        # Генеруємо початкові фігури, якщо потрібно
+        if generate_initial:
+            self.generate_simple_initial_setup()
+
+    def generate_simple_initial_setup(self):
+        """Проста генерація початкових фігур на сітці"""
+        from piece import generate_random_piece
+        
+        # Випадкова кількість фігур від 2 до 6
+        num_pieces = random.randint(2, 6)
+        placed_pieces = 0
+        max_attempts = 30  # Максимум спроб
+        
+        print(f"🎲 Генерація {num_pieces} початкових фігур...")
+        
+        for attempt in range(max_attempts):
+            if placed_pieces >= num_pieces:
+                break
+                
+            # Генеруємо випадкову фігуру
+            piece = generate_random_piece()
+            
+            # Випадкова позиція на сітці
+            grid_x = random.randint(0, self.size - 3)  # Залишаємо місце для фігури
+            grid_y = random.randint(0, self.size - 3)
+            
+            # Перевіряємо, чи можна розмістити фігуру
+            if self.can_place_piece(piece, grid_x, grid_y):
+                # Розміщуємо фігуру
+                for row in range(len(piece.shape)):
+                    for col in range(len(piece.shape[row])):
+                        if piece.shape[row][col] == 1:
+                            target_row = grid_y + row
+                            target_col = grid_x + col
+                            if (0 <= target_row < self.size and 0 <= target_col < self.size):
+                                self.cells[target_row][target_col] = piece.color
+                
+                placed_pieces += 1
+                print(f"  ✓ Фігура {placed_pieces}/{num_pieces} розміщена в позиції ({grid_x}, {grid_y})")
+        
+        if placed_pieces < num_pieces:
+            print(f"  ⚠️ Розміщено {placed_pieces} з {num_pieces} фігур")
+        else:
+            print(f"  🎉 Успішно розміщено всі {num_pieces} фігури!")
+        
+        # Скидаємо очки після початкового розміщення
+        self.score = 0
 
     def draw(self, surface, cell_size=GRID_CELL_SIZE):
         """Малює ігрову сітку на екрані"""

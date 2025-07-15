@@ -1,18 +1,23 @@
 import pygame
-from constants import*  # Імпорт констант
+from constants import *
+
 
 class Grid:
+    """Клас для управління ігровою сіткою 8x8"""
+    
     def __init__(self, size=8):
         self.size = size
-        self.cells = [[None for _ in range(size)] for _ in range(size)]  # ігрова сітка
-        self.score = 0  # початковий рахунок
-        self.combo_multiplier = 1  # множник комбо
+        self.cells = [[None for _ in range(size)] for _ in range(size)]  # Ігрова сітка
+        self.score = 0  # Поточний рахунок
+        self.combo_multiplier = 1  # Множник комбо
         self.last_clear_success = False
 
-    def draw(self, surface, cell_size=50):
+    def draw(self, surface, cell_size=GRID_CELL_SIZE):
+        """Малює ігрову сітку на екрані"""
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
-        #малюємо сітку
+        
+        # Малюємо сітку
         for row in range(self.size):
             for col in range(self.size):
                 rect = pygame.Rect(
@@ -22,29 +27,28 @@ class Grid:
                 )
                 
                 if self.cells[row][col] is None:
-                    color = (125, 78, 23)  # Порожня клітинка
+                    color = EMPTY_CELL_COLOR  # Порожня клітинка
                 else:
                     color = self.cells[row][col]  # Колір фігури
+                    
                 pygame.draw.rect(surface, color, rect)
-                pygame.draw.rect(surface, CARROT, rect, 1)  # рамка
-                
-    # ПЕРЕВІРКА РЯДКІВ
+                pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)  # Рамка
+
     def is_row_full(self, row):
-        # перевіряємо, чи рядок заповнений
+        """Перевіряє, чи рядок заповнений"""
         return all(self.cells[row][col] is not None for col in range(self.size))
-    
 
     def is_col_full(self, col):
-        # перевіряємо, чи стовпець заповнений  
-        return all(self.cells[row][col] is not None for row in range(self.size))    
-    
-    def clear_full_rows (self):
-        # очищаємо заповнені рядки
+        """Перевіряє, чи стовпець заповнений"""
+        return all(self.cells[row][col] is not None for row in range(self.size))
+
+    def clear_full_rows(self):
+        """Очищає заповнені рядки"""
         cleared = 0
         for row in range(self.size):
             if self.is_row_full(row):
                 for col in range(self.size):
-                    self.cells[row][col] = None  # очищаємо клітинки до None
+                    self.cells[row][col] = None  # Очищаємо клітинки до None
                 cleared += 1
         return cleared
     
@@ -111,19 +115,29 @@ class Grid:
         self.score += (points + bonus) * self.combo_multiplier
 
         if total_cleared > 0:
-            print(f"Очищено {len(full_rows)} рядків і {len(full_cols)} стовпців. +{points} балів! Бонус: +{bonus}")
+            # Показуємо тільки важливу інформацію про очки та комбо
+            if len(full_rows) > 0 and len(full_cols) > 0:
+                print(f"🎯 Очищено {len(full_rows)} рядків + {len(full_cols)} стовпців! +{(points + bonus) * self.combo_multiplier} очок")
+            elif len(full_rows) > 0:
+                print(f"🎯 Очищено {len(full_rows)} рядків! +{(points + bonus) * self.combo_multiplier} очок")
+            elif len(full_cols) > 0:
+                print(f"🎯 Очищено {len(full_cols)} стовпців! +{(points + bonus) * self.combo_multiplier} очок")
+            
+            if bonus > 0:
+                print(f"🎁 Бонус за кілька ліній: +{bonus}")
+            if self.combo_multiplier > 1:
+                print(f"🔥 КОМБО x{self.combo_multiplier}!")
         
-
         return total_cleared
     
         # ТЕСТОВА ФУНКЦІЯ (для перевірки)
     def fill_test_line(self):
         """Заповнює перший рядок для тестування"""
         for col in range(self.size):
-            self.cells[0][col] = (255, 0, 0)  # Червоний колір для тесту
+            self.cells[0][col] = PIECE_RED  # Червоний колір для тесту
             
     # ВАЛІДАЦІЯ РОЗМІЩЕННЯ ФІГУР
-    def mouse_to_grid(self, mouse_x, mouse_y, cell_size=50):
+    def mouse_to_grid(self, mouse_x, mouse_y, cell_size=GRID_CELL_SIZE):
         """Конвертує координати миші у координати сітки"""
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
@@ -158,8 +172,7 @@ class Grid:
         """Розміщує фігуру на сітці"""
         if not self.can_place_piece(piece, grid_x, grid_y):
             return False
-
-
+        
         # Розміщуємо фігуру
         for row in range(len(piece.shape)):
             for col in range(len(piece.shape[row])):
@@ -167,16 +180,17 @@ class Grid:
                     target_row = grid_y + row
                     target_col = grid_x + col
                     self.cells[target_row][target_col] = piece.color  # Зберігаємо колір фігури
+        
         self.score += 1
         return True
     
-    def highlight_position(self, surface, grid_x, grid_y, piece, cell_size=50, valid=True):
+    def highlight_position(self, surface, grid_x, grid_y, piece, cell_size=GRID_CELL_SIZE, valid=True):
         """Підсвічує позицію для розміщення фігури"""
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
         
         # Колір підсвічування
-        color = (0, 255, 0, 100) if valid else (255, 0, 0, 100)  # Зелений або червоний
+        color = PREVIEW_VALID_COLOR if valid else PREVIEW_INVALID_COLOR  # Зелений або червоний
         
         # Створюємо поверхню з прозорістю
         highlight_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
@@ -197,3 +211,49 @@ class Grid:
                         # Малюємо підсвічування
                         pygame.draw.rect(highlight_surface, color, (0, 0, cell_size, cell_size))
                         surface.blit(highlight_surface, rect.topleft)
+    
+    def print_grid_state(self, title="Стан сітки"):
+        """Друкує поточний стан сітки для налагодження"""
+        print(f"=== {title} ===")
+        for row in range(self.size):
+            row_str = ""
+            for col in range(self.size):
+                if self.cells[row][col] is None:
+                    row_str += "⬜ "
+                else:
+                    row_str += "🟩 "
+            print(f"Рядок {row}: {row_str}")
+        print()
+    
+    def test_clearing_logic(self):
+        """Тестує логіку очищення ліній"""
+        print("=== ТЕСТ ЛОГІКИ ОЧИЩЕННЯ ===")
+        
+        # Очищаємо сітку
+        for row in range(self.size):
+            for col in range(self.size):
+                self.cells[row][col] = None
+        
+        # Створюємо тестовий сценарій: заповнюємо стовпець 0, але залишаємо одну порожню клітинку
+        for row in range(self.size):
+            if row != 3:  # Залишаємо рядок 3 порожнім
+                self.cells[row][0] = PIECE_RED  # Червоний колір
+        
+        # Заповнюємо стовпець 1 повністю
+        for row in range(self.size):
+            self.cells[row][1] = PIECE_GREEN  # Зелений колір
+        
+        print("Створений тестовий сценарій:")
+        print("Стовпець 0: з одною порожньою клітинкою в рядку 3")
+        print("Стовпець 1: повністю заповнений")
+        
+        self.print_grid_state("Тестовий стан")
+        
+        # Тестуємо перевірку стовпців
+        print("Перевірка стовпців:")
+        for col in range(2):
+            is_full = self.is_col_full(col)
+            print(f"Стовпець {col}: {'ПОВНИЙ' if is_full else 'НЕ ПОВНИЙ'}")
+        
+        # Очищаємо лінії
+        self.clear_lines()

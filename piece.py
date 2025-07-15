@@ -1,46 +1,61 @@
 import pygame
-from constants import*
+import random
+from constants import *
 
 
 class Piece:
+    """Базовий клас для всіх ігрових фігур"""
+    
     def __init__(self, shape, color):
         self.shape = shape
         self.color = color
         self.x = 0
         self.y = 0
 
-    def draw(self, surface, start_x, start_y, cell_size=50):
-    # малює фігуру на екрані
+    def draw(self, surface, start_x, start_y, cell_size=GRID_CELL_SIZE):
+        """Малює фігуру на екрані з покращеним візуалом"""
         for row in range(len(self.shape)):
             for col in range(len(self.shape[row])):
                 if self.shape[row][col] == 1:  # Якщо є блок
+                    # Відступ для візуального розділення блоків
+                    margin = PIECE_MARGIN
                     rect = pygame.Rect(
-                        start_x + col * cell_size,
-                        start_y + row * cell_size,
-                        cell_size, cell_size
+                        start_x + col * cell_size + margin,
+                        start_y + row * cell_size + margin,
+                        cell_size - 2 * margin, 
+                        cell_size - 2 * margin
                     )
+                    
+                    # Основний колір блоку
                     pygame.draw.rect(surface, self.color, rect)
-                    pygame.draw.rect(surface, (0, 0, 0), rect, 2)
-        
+                    
+                    # Тонкий контур навколо блоку
+                    pygame.draw.rect(surface, PIECE_OUTLINE_COLOR, rect, 1)
+
 
 class SingleBlock(Piece):
-    #Одиночний блок 1x1
-        def __init__(self, color=(255, 255, 0)):  # Жовтий колір за замовчуванням
-            shape = [[1]]  # Матриця 1x1 з одним блоком
-            super().__init__(shape, color)
+    """Одиночний блок 1x1"""
+    
+    def __init__(self, color=PIECE_YELLOW):  # Жовтий колір за замовчуванням
+        shape = [[1]]  # Матриця 1x1 з одним блоком
+        super().__init__(shape, color)
+
 
 class Square(Piece):
     """Квадрат 2x2"""
-    def __init__(self, color=(0, 255, 0)):  # Зелений колір
+    
+    def __init__(self, color=PIECE_GREEN):  # Зелений колір
         shape = [
             [1, 1],
             [1, 1]
         ]
         super().__init__(shape, color)
 
-class square3x3(Piece):
+
+class Square3x3(Piece):
     """Квадрат 3x3"""
-    def __init__(self, color=(255, 0, 0)):  # Червоний колір
+    
+    def __init__(self, color=PIECE_RED):  # Червоний колір
         shape = [
             [1, 1, 1],
             [1, 1, 1],
@@ -48,26 +63,32 @@ class square3x3(Piece):
         ]
         super().__init__(shape, color)
 
+
 class Line(Piece):
     """Пряма лінія 1x2"""
-    def __init__(self, color=(0, 0, 255)):  # Синій колір
+    
+    def __init__(self, color=PIECE_BLUE):  # Синій колір
         shape = [
             [1, 1]
         ]
         super().__init__(shape, color)
 
+
 class Line2x1(Piece):
     """Пряма лінія 2x1"""
-    def __init__(self, color=(0, 255, 0)):  # Зелений колір
+    
+    def __init__(self, color=PIECE_GREEN):  # Зелений колір
         shape = [
             [1],
             [1]
         ]
         super().__init__(shape, color)
 
+
 class Line3x1(Piece):
     """Пряма лінія 1x4"""
-    def __init__(self, color=(255, 165, 0)):  # Помаранчевий колір
+    
+    def __init__(self, color=PIECE_ORANGE):  # Помаранчевий колір
         shape = [
             [1, 1, 1, 1]
         ]
@@ -76,7 +97,8 @@ class Line3x1(Piece):
 
 class LShape(Piece):
     """L-подібна фігура"""
-    def __init__(self, color=(255, 192, 203)):  # Рожевий колір
+    
+    def __init__(self, color=PIECE_PINK):  # Рожевий колір
         shape = [
             [1, 0],
             [1, 0],
@@ -84,9 +106,11 @@ class LShape(Piece):
         ]
         super().__init__(shape, color)
 
+
 class TShape(Piece):
     """Т-подібна фігура"""
-    def __init__(self, color=(0, 255, 255)):  # Блакитний колір
+    
+    def __init__(self, color=PIECE_CYAN):  # Блакитний колір
         shape = [
             [1, 1, 1],
             [0, 1, 0],
@@ -94,11 +118,12 @@ class TShape(Piece):
         ]
         super().__init__(shape, color)
 
+
 # Список всіх доступних фігур
 PIECE_TYPES = [
     SingleBlock,
     Square,
-    square3x3,
+    Square3x3,
     Line,
     Line2x1,
     Line3x1,
@@ -106,25 +131,27 @@ PIECE_TYPES = [
     TShape
 ]
 
+
 def generate_random_piece():
     """Генерує випадкову фігуру"""
     import random
     piece_class = random.choice(PIECE_TYPES)
     return piece_class()
 
+
 def generate_three_pieces():
     """Генерує 3 фігури для вибору (як у Block Blast)"""
     return [generate_random_piece() for _ in range(3)]
 
+
 class PieceBox:
-    """Невидима коробка для розміщення 3 фігур"""
-    def __init__(self, start_x, start_y, width=250, height=500):
+    def __init__(self, start_x, start_y, width=PIECE_CONTAINER_WIDTH, height=PIECE_CONTAINER_HEIGHT):
         self.start_x = start_x
         self.start_y = start_y
         self.width = width
         self.height = height
-        self.cell_size = 48  # Розмір клітинки для фігур
-        self.spacing = 30    # Збільшений відступ між фігурами
+        self.cell_size = PIECE_CELL_SIZE  # Розмір клітинки для фігур
+        self.spacing = 30    # Відступ між фігурами
         
         # 3 фігури в коробці
         self.pieces = [
@@ -185,7 +212,7 @@ class PieceBox:
         # Перевіряємо, чи миша всередині коробки
         if not (self.start_x <= mouse_x <= self.start_x + self.width and 
                 self.start_y <= mouse_y <= self.start_y + self.height):
-            return None
+            return None, None, None
             
         # Перевіряємо кожну фігуру з урахуванням її реальних розмірів
         for i, (rel_x, rel_y) in enumerate(self.piece_slots):
@@ -198,10 +225,49 @@ class PieceBox:
             # Область кліку відповідає реальному розміру фігури
             if (abs_x <= mouse_x <= abs_x + piece_width and 
                 abs_y <= mouse_y <= abs_y + piece_height):
-                return i
+                # Обчислюємо зміщення кліку відносно початку фігури
+                offset_x = mouse_x - abs_x
+                offset_y = mouse_y - abs_y
+                return i, offset_x, offset_y
         
-        return None
+        return None, None, None
     
+    def get_block_position_in_piece(self, mouse_x, mouse_y):
+        """Визначає, за який блок фігури взялися (координати блоку в матриці фігури)"""
+        # Перевіряємо, чи миша всередині коробки
+        if not (self.start_x <= mouse_x <= self.start_x + self.width and 
+                self.start_y <= mouse_y <= self.start_y + self.height):
+            return None, None, None
+            
+        # Перевіряємо кожну фігуру
+        for i, (rel_x, rel_y) in enumerate(self.piece_slots):
+            piece = self.pieces[i]
+            piece_width, piece_height = self._get_piece_dimensions(piece)
+            
+            abs_x = self.start_x + rel_x
+            abs_y = self.start_y + rel_y
+            
+            # Перевіряємо, чи клік в межах фігури
+            if (abs_x <= mouse_x <= abs_x + piece_width and 
+                abs_y <= mouse_y <= abs_y + piece_height):
+                
+                # Обчислюємо зміщення кліку відносно початку фігури
+                offset_x = mouse_x - abs_x
+                offset_y = mouse_y - abs_y
+                
+                # Визначаємо, на який блок фігури клікнули
+                block_col = offset_x // self.cell_size
+                block_row = offset_y // self.cell_size
+                
+                # Перевіряємо, чи це дійсно блок фігури (а не порожнє місце)
+                if (0 <= block_row < len(piece.shape) and 
+                    0 <= block_col < len(piece.shape[0]) and
+                    piece.shape[block_row][block_col] == 1):
+                    
+                    return i, block_col, block_row
+                    
+        return None, None, None
+
     def replace_piece(self, piece_index):
         """Замінює фігуру на нову випадкову"""
         if 0 <= piece_index < len(self.pieces):
@@ -219,6 +285,6 @@ class PieceBox:
     
     def draw_box_outline(self, surface):
         """Малює рамку коробки"""
-        pygame.draw.rect(surface, (100, 100, 100), 
+        pygame.draw.rect(surface, PIECE_OUTLINE_COLOR, 
                         (self.start_x, self.start_y, self.width, self.height), 2)
 

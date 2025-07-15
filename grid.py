@@ -70,3 +70,78 @@ class Grid:
         """Заповнює перший рядок для тестування"""
         for col in range(self.size):
             self.cells[0][col] = 1
+            
+    # ВАЛІДАЦІЯ РОЗМІЩЕННЯ ФІГУР
+    def mouse_to_grid(self, mouse_x, mouse_y, cell_size=50):
+        """Конвертує координати миші у координати сітки"""
+        offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
+        offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
+        
+        grid_x = (mouse_x - offset_x) // cell_size
+        grid_y = (mouse_y - offset_y) // cell_size
+        
+        return grid_x, grid_y
+    
+    def can_place_piece(self, piece, grid_x, grid_y):
+        """Перевіряє, чи можна розмістити фігуру на позиції (grid_x, grid_y)"""
+        # Перевіряємо кожну клітинку фігури
+        for row in range(len(piece.shape)):
+            for col in range(len(piece.shape[row])):
+                if piece.shape[row][col] == 1:  # Якщо є блок у фігурі
+                    # Розраховуємо позицію на сітці
+                    target_row = grid_y + row
+                    target_col = grid_x + col
+                    
+                    # Перевіряємо межі сітки
+                    if (target_row < 0 or target_row >= self.size or 
+                        target_col < 0 or target_col >= self.size):
+                        return False
+                    
+                    # Перевіряємо, чи клітинка вільна
+                    if self.cells[target_row][target_col] != 0:
+                        return False
+        
+        return True
+    
+    def place_piece(self, piece, grid_x, grid_y):
+        """Розміщує фігуру на сітці"""
+        if not self.can_place_piece(piece, grid_x, grid_y):
+            return False
+        
+        # Розміщуємо фігуру
+        for row in range(len(piece.shape)):
+            for col in range(len(piece.shape[row])):
+                if piece.shape[row][col] == 1:
+                    target_row = grid_y + row
+                    target_col = grid_x + col
+                    self.cells[target_row][target_col] = 1
+        
+        return True
+    
+    def highlight_position(self, surface, grid_x, grid_y, piece, cell_size=50, valid=True):
+        """Підсвічує позицію для розміщення фігури"""
+        offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
+        offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
+        
+        # Колір підсвічування
+        color = (0, 255, 0, 100) if valid else (255, 0, 0, 100)  # Зелений або червоний
+        
+        # Створюємо поверхню з прозорістю
+        highlight_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
+        
+        for row in range(len(piece.shape)):
+            for col in range(len(piece.shape[row])):
+                if piece.shape[row][col] == 1:
+                    target_row = grid_y + row
+                    target_col = grid_x + col
+                    
+                    # Перевіряємо, чи в межах екрану
+                    if (0 <= target_row < self.size and 0 <= target_col < self.size):
+                        rect = pygame.Rect(
+                            offset_x + target_col * cell_size,
+                            offset_y + target_row * cell_size,
+                            cell_size, cell_size
+                        )
+                        # Малюємо підсвічування
+                        pygame.draw.rect(highlight_surface, color, (0, 0, cell_size, cell_size))
+                        surface.blit(highlight_surface, rect.topleft)

@@ -68,3 +68,17 @@ SCORE_POS_Y = 50
 ````
 
 **Отже**: константи - це змінні, але **спеціальні** змінні, які встановлюються один раз і більше не змінюються! 🎯
+
+
+
+
+
+
+elif event.type == pygame.MOUSEMOTION:
+    if dragging:
+        # Показати, куди можна поставити фігуру
+        grid_pos = mouse_to_grid(pygame.mouse.get_pos())
+        if grid.can_place(dragged_piece, grid_pos):
+            grid.highlight_cell(grid_pos)  # Підсвітити зеленим
+        else:
+            grid.highlight_cell(grid_pos, color=RED)  # Підсвітити червоним

@@ -29,14 +29,50 @@ class SingleBlock(Piece):
             shape = [[1]]  # Матриця 1x1 з одним блоком
             super().__init__(shape, color)
 
-
-class LShape(Piece):
-    """L-подібна фігура"""
-    pass
-
 class Square(Piece):
-    """Квадратна фігура 2x2, 3x3"""
-    pass
+    """Квадрат 2x2"""
+    def __init__(self, color=(0, 255, 0)):  # Зелений колір
+        shape = [
+            [1, 1],
+            [1, 1]
+        ]
+        super().__init__(shape, color)
+
+class square3x3(Piece):
+    """Квадрат 3x3"""
+    def __init__(self, color=(255, 0, 0)):  # Червоний колір
+        shape = [
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1]
+        ]
+        super().__init__(shape, color)
+
+class Line(Piece):
+    """Пряма лінія 1x2"""
+    def __init__(self, color=(0, 0, 255)):  # Синій колір
+        shape = [
+            [1, 1]
+        ]
+        super().__init__(shape, color)
+
+class Line2x1(Piece):
+    """Пряма лінія 2x1"""
+    def __init__(self, color=(0, 255, 0)):  # Зелений колір
+        shape = [
+            [1],
+            [1]
+        ]
+        super().__init__(shape, color)
+
+class Line3x1(Piece):
+    """Пряма лінія 1x4"""
+    def __init__(self, color=(255, 165, 0)):  # Помаранчевий колір
+        shape = [
+            [1, 1, 1, 1]
+        ]
+        super().__init__(shape, color)
+
 
 class LShape(Piece):
     """L-подібна фігура"""
@@ -53,6 +89,7 @@ class TShape(Piece):
     def __init__(self, color=(0, 255, 255)):  # Блакитний колір
         shape = [
             [1, 1, 1],
+            [0, 1, 0],
             [0, 1, 0]
         ]
         super().__init__(shape, color)

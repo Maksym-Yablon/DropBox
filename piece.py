@@ -11,34 +11,60 @@ class Piece:
         self.color = color
         self.x = 0
         self.y = 0
+        # Кешуємо розміри фігури для оптимізації
+        self._cached_dimensions = None
+
+    def get_dimensions(self, cell_size):
+        """Отримує розміри фігури з кешуванням"""
+        if self._cached_dimensions is None or self._cached_dimensions[0] != cell_size:
+            rows = len(self.shape)
+            cols = len(self.shape[0]) if rows > 0 else 0
+            width = cols * cell_size
+            height = rows * cell_size
+            self._cached_dimensions = (cell_size, width, height)
+            return width, height
+        return self._cached_dimensions[1], self._cached_dimensions[2]
 
     def draw(self, surface, start_x, start_y, cell_size=GRID_CELL_SIZE, alpha=255):
         """Малює фігуру на екрані з покращеним візуалом та підтримкою прозорості"""
-        for row in range(len(self.shape)):
-            for col in range(len(self.shape[row])):
-                if self.shape[row][col] == 1:  # Якщо є блок
-                    # Відступ для візуального розділення блоків
-                    margin = PIECE_MARGIN
-                    rect = pygame.Rect(
-                        start_x + col * cell_size + margin,
-                        start_y + row * cell_size + margin,
-                        cell_size - 2 * margin, 
-                        cell_size - 2 * margin
-                    )
-                    
-                    if alpha < 255:
-                        # Створюємо поверхню з прозорістю
-                        piece_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                        color_with_alpha = (*self.color, alpha)
-                        pygame.draw.rect(piece_surface, color_with_alpha, (0, 0, rect.width, rect.height))
-                        
-                        # Контур з прозорістю
-                        outline_with_alpha = (*PIECE_OUTLINE_COLOR, alpha)
-                        pygame.draw.rect(piece_surface, outline_with_alpha, (0, 0, rect.width, rect.height), 1)
-                        
-                        surface.blit(piece_surface, rect.topleft)
-                    else:
-                        # Звичайне малювання без прозорості
+        # Оптимізація: створюємо поверхню тільки один раз для всієї фігури з прозорістю
+        if alpha < 255:
+            # Розраховуємо загальний розмір фігури
+            width, height = self.get_dimensions(cell_size)
+            if width > 0 and height > 0:
+                # Створюємо одну поверхню для всієї фігури
+                figure_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+                
+                for row in range(len(self.shape)):
+                    for col in range(len(self.shape[row])):
+                        if self.shape[row][col] == 1:
+                            margin = PIECE_MARGIN
+                            rect = pygame.Rect(
+                                col * cell_size + margin,
+                                row * cell_size + margin,
+                                cell_size - 2 * margin, 
+                                cell_size - 2 * margin
+                            )
+                            
+                            color_with_alpha = (*self.color, alpha)
+                            pygame.draw.rect(figure_surface, color_with_alpha, rect)
+                            
+                            outline_with_alpha = (*PIECE_OUTLINE_COLOR, alpha)
+                            pygame.draw.rect(figure_surface, outline_with_alpha, rect, 1)
+                
+                surface.blit(figure_surface, (start_x, start_y))
+        else:
+            # Звичайне малювання без прозорості (без зміни)
+            for row in range(len(self.shape)):
+                for col in range(len(self.shape[row])):
+                    if self.shape[row][col] == 1:
+                        margin = PIECE_MARGIN
+                        rect = pygame.Rect(
+                            start_x + col * cell_size + margin,
+                            start_y + row * cell_size + margin,
+                            cell_size - 2 * margin, 
+                            cell_size - 2 * margin
+                        )
                         pygame.draw.rect(surface, self.color, rect)
                         pygame.draw.rect(surface, PIECE_OUTLINE_COLOR, rect, 1)
 
@@ -202,15 +228,71 @@ PIECE_TYPES = [
 ]
 
 
+def generate_weighted_random_piece():
+    """Генерує випадкову фігуру з урахуванням шансів появи з constants.py"""
+    # Отримуємо всі фігури з їх шансами
+    available_pieces = []
+    weights = []
+    
+    # Створюємо словник відповідності класу та його назви
+    piece_name_map = {
+        SingleBlock: 'SingleBlock',
+        Square: 'Square', 
+        Square3x3: 'Square3x3',
+        Line: 'Line',
+        Line2x1: 'Line2x1',
+        Line3x1: 'Line3x1',
+        LShape: 'LShape',
+        TShape: 'TShape',
+        ZShape: 'ZShape',
+        Cross: 'Cross',
+        Corner: 'Corner',
+        Line3: 'Line3',
+        SmallT: 'SmallT'
+    }
+    
+    # Збираємо доступні фігури та їх ваги
+    from constants import PIECE_SPAWN_CHANCES
+    
+    for piece_class in PIECE_TYPES:
+        piece_name = piece_name_map.get(piece_class)
+        if piece_name and piece_name in PIECE_SPAWN_CHANCES:
+            chance = PIECE_SPAWN_CHANCES[piece_name]
+            if chance > 0:  # Додаємо тільки фігури з шансом > 0%
+                available_pieces.append(piece_class)
+                weights.append(chance)
+    
+    # Якщо немає доступних фігур (всі шанси 0%), використовуємо SingleBlock
+    if not available_pieces:
+        return SingleBlock()
+    
+    # Використовуємо weighted random choice
+    total_weight = sum(weights)
+    if total_weight == 0:
+        return SingleBlock()
+    
+    # Генеруємо випадкове число від 0 до загальної ваги
+    random_value = random.randint(1, total_weight)
+    
+    # Знаходимо відповідну фігуру
+    current_weight = 0
+    for i, weight in enumerate(weights):
+        current_weight += weight
+        if random_value <= current_weight:
+            return available_pieces[i]()
+    
+    # Fallback (не повинно статися)
+    return available_pieces[-1]()
+
+
 def generate_random_piece():
-    """Генерує випадкову фігуру"""
-    piece_class = random.choice(PIECE_TYPES)
-    return piece_class()
+    """Генерує випадкову фігуру (застаріла версія, використовує нову систему шансів)"""
+    return generate_weighted_random_piece()
 
 
 def generate_three_pieces():
-    """Генерує 3 фігури для вибору (як у Block Blast)"""
-    return [generate_random_piece() for _ in range(3)]
+    """Генерує 3 фігури для вибору з урахуванням шансів появи"""
+    return [generate_weighted_random_piece() for _ in range(3)]
 
 
 class PieceBox:
@@ -222,15 +304,15 @@ class PieceBox:
         self.cell_size = PIECE_CONTAINER_CELL_SIZE  # Менший розмір для контейнера
         self.spacing = 40    # Збільшили відступ між фігурами
         
-        # 3 фігури в коробці
+        # 3 фігури в коробці (з урахуванням шансів)
         self.pieces = [
-            generate_random_piece(),
-            generate_random_piece(),
-            generate_random_piece()
+            generate_weighted_random_piece(),
+            generate_weighted_random_piece(),
+            generate_weighted_random_piece()
         ]
         
         # Наступна фігура (одна для всіх слотів)
-        self.next_piece = generate_random_piece()
+        self.next_piece = generate_weighted_random_piece()
         
         # Індекс фігури, яку зараз перетягують (для показу preview)
         self.dragging_index = None
@@ -239,17 +321,10 @@ class PieceBox:
         self._calculate_piece_positions()
     
     def _get_piece_dimensions(self, piece):
-        """Отримує розміри фігури в пікселях"""
+        """Отримує розміри фігури в пікселях (використовує кешований метод)"""
         if not piece or not piece.shape:
             return 0, 0
-        
-        rows = len(piece.shape)
-        cols = len(piece.shape[0]) if rows > 0 else 0
-        
-        width = cols * self.cell_size
-        height = rows * self.cell_size
-        
-        return width, height
+        return piece.get_dimensions(self.cell_size)
     
     def _calculate_piece_positions(self):
         """Обчислює центровані позиції для кожної фігури з оптимізованим вирівнюванням"""
@@ -304,67 +379,56 @@ class PieceBox:
         self.slot_width = slot_width
         self.slot_height = slot_height
     
+    def _get_piece_at_position(self, mouse_x, mouse_y):
+        """Спільна логіка для знаходження фігури за позицією (оптимізація)"""
+        # Перевіряємо, чи миша всередині контейнера
+        if not (self.start_x <= mouse_x <= self.start_x + self.width and 
+                self.start_y <= mouse_y <= self.start_y + self.height):
+            return None, None, None, None, None
+            
+        # Перевіряємо кожну фігуру в її слоті
+        for i, (slot_x, slot_y) in enumerate(self.piece_slots):
+            piece = self.pieces[i]
+            piece_width, piece_height = self._get_piece_dimensions(piece)
+            
+            # Абсолютні координати фігури
+            abs_x = self.start_x + slot_x
+            abs_y = self.start_y + slot_y
+            
+            # Перевіряємо, чи клік потрапив у фігуру
+            if (abs_x <= mouse_x <= abs_x + piece_width and 
+                abs_y <= mouse_y <= abs_y + piece_height):
+                
+                # Розраховуємо зміщення кліку відносно початку фігури
+                offset_x = mouse_x - abs_x
+                offset_y = mouse_y - abs_y
+                return i, piece, abs_x, abs_y, (offset_x, offset_y)
+        
+        return None, None, None, None, None
+
     def get_piece_at_mouse(self, mouse_x, mouse_y):
         """Перевіряє, чи клікнули на фігуру в коробці з урахуванням слотів"""
-        # Перевіряємо, чи миша всередині контейнера
-        if not (self.start_x <= mouse_x <= self.start_x + self.width and 
-                self.start_y <= mouse_y <= self.start_y + self.height):
-            return None, None, None
-            
-        # Перевіряємо кожну фігуру в її слоті
-        for i, (slot_x, slot_y) in enumerate(self.piece_slots):
-            piece = self.pieces[i]
-            piece_width, piece_height = self._get_piece_dimensions(piece)
-            
-            # Абсолютні координати фігури
-            abs_x = self.start_x + slot_x
-            abs_y = self.start_y + slot_y
-            
-            # Перевіряємо, чи клік потрапив у фігуру
-            if (abs_x <= mouse_x <= abs_x + piece_width and 
-                abs_y <= mouse_y <= abs_y + piece_height):
-                
-                # Розраховуємо зміщення кліку відносно початку фігури
-                offset_x = mouse_x - abs_x
-                offset_y = mouse_y - abs_y
-                return i, offset_x, offset_y
-        
+        piece_index, piece, abs_x, abs_y, offset = self._get_piece_at_position(mouse_x, mouse_y)
+        if piece_index is not None:
+            return piece_index, offset[0], offset[1]
         return None, None, None
-    
+
     def get_block_position_in_piece(self, mouse_x, mouse_y):
         """Визначає, за який блок фігури взялися з урахуванням слотів"""
-        # Перевіряємо, чи миша всередині контейнера
-        if not (self.start_x <= mouse_x <= self.start_x + self.width and 
-                self.start_y <= mouse_y <= self.start_y + self.height):
-            return None, None, None
+        piece_index, piece, abs_x, abs_y, offset = self._get_piece_at_position(mouse_x, mouse_y)
+        if piece_index is not None:
+            offset_x, offset_y = offset
             
-        # Перевіряємо кожну фігуру в її слоті
-        for i, (slot_x, slot_y) in enumerate(self.piece_slots):
-            piece = self.pieces[i]
-            piece_width, piece_height = self._get_piece_dimensions(piece)
+            # Визначаємо блок фігури
+            block_col = offset_x // self.cell_size
+            block_row = offset_y // self.cell_size
             
-            # Абсолютні координати фігури
-            abs_x = self.start_x + slot_x
-            abs_y = self.start_y + slot_y
-            
-            # Перевіряємо, чи клік потрапив у фігуру
-            if (abs_x <= mouse_x <= abs_x + piece_width and 
-                abs_y <= mouse_y <= abs_y + piece_height):
+            # Перевіряємо, чи це дійсно блок фігури
+            if (0 <= block_row < len(piece.shape) and 
+                0 <= block_col < len(piece.shape[0]) and
+                piece.shape[block_row][block_col] == 1):
                 
-                # Розраховуємо зміщення кліку відносно початку фігури
-                offset_x = mouse_x - abs_x
-                offset_y = mouse_y - abs_y
-                
-                # Визначаємо блок фігури
-                block_col = offset_x // self.cell_size
-                block_row = offset_y // self.cell_size
-                
-                # Перевіряємо, чи це дійсно блок фігури
-                if (0 <= block_row < len(piece.shape) and 
-                    0 <= block_col < len(piece.shape[0]) and
-                    piece.shape[block_row][block_col] == 1):
-                    
-                    return i, block_col, block_row
+                return piece_index, block_col, block_row
                     
         return None, None, None
 
@@ -380,7 +444,7 @@ class PieceBox:
                 # Фігуру розміщено на сітці - замінюємо на ту, що показували під час перетягування
                 self.pieces[self.dragging_index] = self.next_piece
                 # Генеруємо нову наступну фігуру тільки після заміни
-                self.next_piece = generate_random_piece()
+                self.next_piece = generate_weighted_random_piece()
                 self._calculate_piece_positions()
             # Якщо фігуру не розміщено, вона просто повертається на місце
             self.dragging_index = None
@@ -389,7 +453,7 @@ class PieceBox:
         """Замінює фігуру на наступну (для сумісності - краще використовувати stop_dragging)"""
         if 0 <= piece_index < len(self.pieces):
             self.pieces[piece_index] = self.next_piece
-            self.next_piece = generate_random_piece()
+            self.next_piece = generate_weighted_random_piece()
             # Перераховуємо позиції після заміни фігури
             self._calculate_piece_positions()
 

@@ -19,7 +19,7 @@ class Grid:
 
     def generate_simple_initial_setup(self):
         """Проста генерація початкових фігур на сітці"""
-        from piece import generate_random_piece
+        from piece import generate_weighted_random_piece
         
         # Випадкова кількість фігур від 2 до 6
         num_pieces = random.randint(2, 6)
@@ -33,7 +33,7 @@ class Grid:
                 break
                 
             # Генеруємо випадкову фігуру
-            piece = generate_random_piece()
+            piece = generate_weighted_random_piece()
             
             # Випадкова позиція на сітці
             grid_x = random.randint(0, self.size - 3)  # Залишаємо місце для фігури

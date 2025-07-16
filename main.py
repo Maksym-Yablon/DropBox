@@ -5,7 +5,6 @@ from sys import exit
 from constants import *
 import grid as grid_module
 from piece import PieceBox
-import ui
 from ui import ui_effects, GameOverScreen, GameUI, MenuSystem
 from records import records_manager
 
@@ -126,13 +125,16 @@ def reset_game():
     game_over_check_counter = 0
 
 while running:
+    # Кешуємо позицію миші один раз на початку кадру для оптимізації
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    mouse_pos = (mouse_x, mouse_y)
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
             
         elif event.type == pygame.MOUSEBUTTONDOWN:
             # Почати перетягування
-            mouse_pos = pygame.mouse.get_pos()
             clicked_piece_index, offset_x, offset_y = get_piece_at_mouse(mouse_pos)
             if clicked_piece_index is not None:
                 # Також визначаємо, за який блок фігури взялися
@@ -153,8 +155,7 @@ while running:
         elif event.type == pygame.MOUSEBUTTONUP:
             # Закінчити перетягування
             if dragging and dragged_piece:
-                mouse_pos = pygame.mouse.get_pos()
-                grid_x, grid_y = grid.mouse_to_grid(mouse_pos[0], mouse_pos[1])
+                grid_x, grid_y = grid.mouse_to_grid(mouse_x, mouse_y)
                 
                 # Корегуємо позицію з урахуванням того, за який блок фігури взялися
                 target_grid_x = grid_x - drag_block_col
@@ -182,8 +183,8 @@ while running:
             
         elif event.type == pygame.MOUSEMOTION:
             if dragging:
-                mouse_pos = pygame.mouse.get_pos()
-                # Оновлюємо позицію для відображення під мишею
+                # Позиція миші вже кешована на початку кадру
+                pass
         
         elif event.type == pygame.KEYDOWN:
             # Команди для налагодження
@@ -203,9 +204,6 @@ while running:
     best_score = records_manager.get_best_score()
     game_ui.draw_hud(grid.score, best_score)
 
-    # Кешуємо позицію миші для оптимізації (використовується в декількох місцях)
-    mouse_x, mouse_y = pygame.mouse.get_pos()
-
     # Підсвічування під час перетягування з новими ефектами
     if dragging and dragged_piece:
         grid_x, grid_y = grid.mouse_to_grid(mouse_x, mouse_y)
@@ -224,7 +222,7 @@ while running:
     ui_effects.draw_simple_piece_box(screen, piece_box)
     
     # Малюємо фігури в коробці (крім тої, що перетягується)
-    piece_box.draw(screen, dragged_piece_index if dragging else None)
+    piece_box.draw(screen)
 
     # Якщо перетягуємо фігуру - малюємо її під мишею з урахуванням зміщення кліку
     if dragging and dragged_piece:

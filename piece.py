@@ -252,8 +252,6 @@ def generate_weighted_random_piece():
     }
     
     # Збираємо доступні фігури та їх ваги
-    from constants import PIECE_SPAWN_CHANCES
-    
     for piece_class in PIECE_TYPES:
         piece_name = piece_name_map.get(piece_class)
         if piece_name and piece_name in PIECE_SPAWN_CHANCES:
@@ -283,11 +281,6 @@ def generate_weighted_random_piece():
     
     # Fallback (не повинно статися)
     return available_pieces[-1]()
-
-
-def generate_random_piece():
-    """Генерує випадкову фігуру (застаріла версія, використовує нову систему шансів)"""
-    return generate_weighted_random_piece()
 
 
 def generate_three_pieces():
@@ -457,7 +450,7 @@ class PieceBox:
             # Перераховуємо позиції після заміни фігури
             self._calculate_piece_positions()
 
-    def draw(self, surface, dragging_index=None):
+    def draw(self, surface):
         """Малює всі фігури в коробці з правильним вирівнюванням наступної фігури"""
         for i, (slot_x, slot_y) in enumerate(self.piece_slots):
             
@@ -499,7 +492,7 @@ class PieceBox:
                 # Малюємо тільки наступну фігуру з прозорістю (з меншим розміром контейнера)
                 self.next_piece.draw(surface, preview_x, preview_y, self.cell_size, alpha=128)
                 
-            elif i != dragging_index:  # Звичайні фігури
+            else:  # Звичайні фігури (не перетягувані)
                 # Малюємо фігуру на її розрахованій позиції (з меншим розміром контейнера)
                 abs_x = self.start_x + slot_x  
                 abs_y = self.start_y + slot_y

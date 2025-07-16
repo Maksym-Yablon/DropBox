@@ -26,7 +26,7 @@ class Grid:
         placed_pieces = 0
         max_attempts = 30  # Максимум спроб
         
-        print(f"🎲 Генерація {num_pieces} початкових фігур...")
+        print(f"Генерація {num_pieces} початкових фігур...")
         
         for attempt in range(max_attempts):
             if placed_pieces >= num_pieces:
@@ -51,12 +51,12 @@ class Grid:
                                 self.cells[target_row][target_col] = piece.color
                 
                 placed_pieces += 1
-                print(f"  ✓ Фігура {placed_pieces}/{num_pieces} розміщена в позиції ({grid_x}, {grid_y})")
+                print(f"  Фігура {placed_pieces}/{num_pieces} розміщена в позиції ({grid_x}, {grid_y})")
         
         if placed_pieces < num_pieces:
-            print(f"  ⚠️ Розміщено {placed_pieces} з {num_pieces} фігур")
+            print(f"  Розміщено {placed_pieces} з {num_pieces} фігур")
         else:
-            print(f"  🎉 Успішно розміщено всі {num_pieces} фігури!")
+            print(f"  Успішно розміщено всі {num_pieces} фігури!")
         
         # Скидаємо очки після початкового розміщення
         self.score = 0
@@ -166,11 +166,11 @@ class Grid:
         if total_cleared > 0:
             # Показуємо тільки важливу інформацію про очки та комбо
             if len(full_rows) > 0 and len(full_cols) > 0:
-                print(f"🎯 Очищено {len(full_rows)} рядків + {len(full_cols)} стовпців! +{(points + bonus) * self.combo_multiplier} очок")
+                print(f"Очищено {len(full_rows)} рядків + {len(full_cols)} стовпців! +{(points + bonus) * self.combo_multiplier} очок")
             elif len(full_rows) > 0:
-                print(f"🎯 Очищено {len(full_rows)} рядків! +{(points + bonus) * self.combo_multiplier} очок")
+                print(f"Очищено {len(full_rows)} рядків! +{(points + bonus) * self.combo_multiplier} очок")
             elif len(full_cols) > 0:
-                print(f"🎯 Очищено {len(full_cols)} стовпців! +{(points + bonus) * self.combo_multiplier} очок")
+                print(f"Очищено {len(full_cols)} стовпців! +{(points + bonus) * self.combo_multiplier} очок")
             
             if bonus > 0:
                 print(f"🎁 Бонус за кілька ліній: +{bonus}")

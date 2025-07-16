@@ -118,6 +118,34 @@ PIECE_SPAWN_CHANCES = {
     'SmallT': 12          # 12% - середньо
 }
 
+# ===== ПАНЕЛЬ КЕРУВАННЯ =====
+# Розміри панелі керування
+CONTROL_PANEL_WIDTH = 200
+CONTROL_PANEL_HEIGHT = 300
+CONTROL_PANEL_X = 50  # Ліва сторона екрану
+CONTROL_PANEL_Y = 150
+
+# Розміри кнопок панелі
+CONTROL_BUTTON_WIDTH = 150
+CONTROL_BUTTON_HEIGHT = 40
+CONTROL_BUTTON_MARGIN = 15
+
+# Кольори панелі керування
+CONTROL_PANEL_BG = (45, 45, 75, 180)    # Темно-синій з прозорістю
+CONTROL_PANEL_BORDER = (100, 100, 150)   # Світло-синій для рамки
+CONTROL_BUTTON_COLOR = (70, 130, 180)    # Сталево-синій
+CONTROL_BUTTON_HOVER = (100, 149, 237)   # Корнфлавер синій
+CONTROL_BUTTON_TEXT = (255, 255, 255)    # Білий текст
+
+# ===== КНОПКА ПАУЗИ =====
+# Кнопка паузи в нижньому лівому куті
+PAUSE_BUTTON_SIZE = 50
+PAUSE_BUTTON_X = 20
+PAUSE_BUTTON_Y = SCREEN_HEIGHT - PAUSE_BUTTON_SIZE - 20
+PAUSE_BUTTON_COLOR = (60, 60, 100, 180)  # Темний з прозорістю
+PAUSE_BUTTON_HOVER = (80, 80, 120, 200)
+PAUSE_BUTTON_BORDER = (120, 120, 160)
+
 # ===== ФУНКЦІЇ =====
 def get_background_image():
     """Повертає фонове зображення з масштабуванням під розмір екрану"""

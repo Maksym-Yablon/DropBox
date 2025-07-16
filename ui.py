@@ -195,11 +195,347 @@ class UIEffects:
         pygame.draw.rect(surface, PIECE_BOX_BORDER_COLOR, box_rect, width=2, border_radius=10)
 
 
+class PauseButton:
+    """Проста кнопка паузи в нижньому лівому куті"""
+    
+    def __init__(self):
+        self.rect = pygame.Rect(PAUSE_BUTTON_X, PAUSE_BUTTON_Y, PAUSE_BUTTON_SIZE, PAUSE_BUTTON_SIZE)
+        self.hovered = False
+        self.font = pygame.font.Font(None, 24)
+    
+    def handle_mouse_motion(self, mouse_pos):
+        """Обробляє рух миші для ховер ефекту"""
+        self.hovered = self.rect.collidepoint(mouse_pos)
+    
+    def handle_click(self, mouse_pos):
+        """Обробляє клік по кнопці"""
+        if self.rect.collidepoint(mouse_pos):
+            return True
+        return False
+    
+    def draw(self, screen):
+        """Малює кнопку паузи"""
+        # Вибираємо колір залежно від ховера
+        color = PAUSE_BUTTON_HOVER if self.hovered else PAUSE_BUTTON_COLOR
+        
+        # Малюємо кнопку з заокругленими кутами
+        pygame.draw.rect(screen, color, self.rect, border_radius=8)
+        pygame.draw.rect(screen, PAUSE_BUTTON_BORDER, self.rect, 2, border_radius=8)
+        
+        # Малюємо іконку паузи
+        pause_text = self.font.render("II", True, WHITE)
+        text_rect = pause_text.get_rect(center=self.rect.center)
+        screen.blit(pause_text, text_rect)
+
+
+class ControlPanel:
+    """Клас для панелі керування в грі"""
+    
+    def __init__(self, screen):
+        self.screen = screen
+        self.font = pygame.font.SysFont("Arial", 20, bold=True)
+        self.is_visible = True
+        self.hover_button = None  # Кнопка під мишею
+        
+        # Визначаємо кнопки панелі
+        self.buttons = {
+            'pause': self._create_button(0, "⏸ Пауза"),
+            'restart': self._create_button(1, "🔄 Нова гра"), 
+            'settings': self._create_button(2, "⚙ Налаштування"),
+            'help': self._create_button(3, "❓ Допомога"),
+            'menu': self._create_button(4, "🏠 Меню")
+        }
+    
+    def _create_button(self, index, text):
+        """Створює кнопку на панелі"""
+        y_pos = CONTROL_PANEL_Y + 50 + index * (CONTROL_BUTTON_HEIGHT + CONTROL_BUTTON_MARGIN)
+        return {
+            'rect': pygame.Rect(
+                CONTROL_PANEL_X + 25, 
+                y_pos,
+                CONTROL_BUTTON_WIDTH, 
+                CONTROL_BUTTON_HEIGHT
+            ),
+            'text': text,
+            'enabled': True
+        }
+    
+    def handle_mouse_motion(self, mouse_pos):
+        """Обробляє рух миші для ефекту hover"""
+        self.hover_button = None
+        if self.is_visible:
+            for button_name, button in self.buttons.items():
+                if button['rect'].collidepoint(mouse_pos):
+                    self.hover_button = button_name
+                    break
+    
+    def handle_click(self, mouse_pos):
+        """Обробляє клік по кнопках панелі"""
+        if not self.is_visible:
+            return None
+            
+        for button_name, button in self.buttons.items():
+            if button['rect'].collidepoint(mouse_pos) and button['enabled']:
+                return button_name
+        return None
+    
+    def toggle_visibility(self):
+        """Перемикає видимість панелі"""
+        self.is_visible = not self.is_visible
+    
+    def draw(self):
+        """Малює панель керування"""
+        if not self.is_visible:
+            return
+            
+        # Малюємо фон панелі з прозорістю
+        panel_surface = pygame.Surface((CONTROL_PANEL_WIDTH, CONTROL_PANEL_HEIGHT), pygame.SRCALPHA)
+        pygame.draw.rect(panel_surface, CONTROL_PANEL_BG, 
+                        (0, 0, CONTROL_PANEL_WIDTH, CONTROL_PANEL_HEIGHT), border_radius=15)
+        self.screen.blit(panel_surface, (CONTROL_PANEL_X, CONTROL_PANEL_Y))
+        
+        # Рамка панелі
+        pygame.draw.rect(self.screen, CONTROL_PANEL_BORDER,
+                        (CONTROL_PANEL_X, CONTROL_PANEL_Y, CONTROL_PANEL_WIDTH, CONTROL_PANEL_HEIGHT),
+                        width=2, border_radius=15)
+        
+        # Заголовок панелі
+        title_text = self.font.render("Керування", True, CONTROL_BUTTON_TEXT)
+        title_rect = title_text.get_rect(center=(CONTROL_PANEL_X + CONTROL_PANEL_WIDTH//2, CONTROL_PANEL_Y + 25))
+        self.screen.blit(title_text, title_rect)
+        
+        # Малюємо кнопки
+        for button_name, button in self.buttons.items():
+            # Колір кнопки залежить від hover стану
+            if button_name == self.hover_button:
+                color = CONTROL_BUTTON_HOVER
+            else:
+                color = CONTROL_BUTTON_COLOR
+            
+            # Малюємо кнопку
+            pygame.draw.rect(self.screen, color, button['rect'], border_radius=8)
+            pygame.draw.rect(self.screen, CONTROL_PANEL_BORDER, button['rect'], width=1, border_radius=8)
+            
+            # Текст кнопки
+            text_surface = self.font.render(button['text'], True, CONTROL_BUTTON_TEXT)
+            text_rect = text_surface.get_rect(center=button['rect'].center)
+            self.screen.blit(text_surface, text_rect)
+
+
+class PauseMenu:
+    """Меню паузи з напівпрозорим оверлеєм"""
+    
+    def __init__(self):
+        self.is_paused = False
+        self.overlay_alpha = 128
+        self.buttons = []
+        self._create_buttons()
+    
+    def _create_buttons(self):
+        """Створює кнопки меню паузи"""
+        button_width = 200
+        button_height = 50
+        button_spacing = 60
+        
+        # Центруємо кнопки
+        start_x = (SCREEN_WIDTH - button_width) // 2
+        start_y = (SCREEN_HEIGHT - (5 * button_height + 4 * button_spacing)) // 2
+        
+        buttons_data = [
+            ('resume', 'Продовжити'),
+            ('restart', 'Перезапустити'),
+            ('settings', 'Налаштування'),
+            ('help', 'Допомога'),
+            ('menu', 'Головне меню')
+        ]
+        
+        for i, (action, text) in enumerate(buttons_data):
+            y = start_y + i * (button_height + button_spacing)
+            button = {
+                'action': action,
+                'rect': pygame.Rect(start_x, y, button_width, button_height),
+                'text': text,
+                'hovered': False
+            }
+            self.buttons.append(button)
+    
+    def toggle_pause(self):
+        """Перемикає стан паузи"""
+        self.is_paused = not self.is_paused
+        return self.is_paused
+    
+    def handle_click(self, mouse_pos):
+        """Обробляє кліки по кнопках меню паузи"""
+        if not self.is_paused:
+            return None
+            
+        for button in self.buttons:
+            if button['rect'].collidepoint(mouse_pos):
+                return button['action']
+        return None
+    
+    def handle_mouse_motion(self, mouse_pos):
+        """Обробляє рух миші для ховер ефектів"""
+        if not self.is_paused:
+            return
+            
+        for button in self.buttons:
+            button['hovered'] = button['rect'].collidepoint(mouse_pos)
+    
+    def draw(self, screen):
+        """Малює меню паузи з оверлеєм"""
+        if not self.is_paused:
+            return
+        
+        # Створюємо напівпрозорий оверлей
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(self.overlay_alpha)
+        overlay.fill((0, 0, 0))
+        screen.blit(overlay, (0, 0))
+        
+        # Малюємо заголовок
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("ПАУЗА", True, WHITE)
+        title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 150))
+        screen.blit(title_text, title_rect)
+        
+        # Малюємо кнопки
+        for button in self.buttons:
+            # Кольори залежно від ховера
+            if button['hovered']:
+                button_color = CONTROL_BUTTON_HOVER
+                text_color = WHITE
+            else:
+                button_color = CONTROL_BUTTON_COLOR
+                text_color = CONTROL_BUTTON_TEXT
+            
+            # Малюємо кнопку
+            pygame.draw.rect(screen, button_color, button['rect'], border_radius=8)
+            pygame.draw.rect(screen, WHITE, button['rect'], 2, border_radius=8)
+            
+            # Малюємо текст
+            font = pygame.font.Font(None, 24)
+            text_surface = font.render(button['text'], True, text_color)
+            text_rect = text_surface.get_rect(center=button['rect'].center)
+            screen.blit(text_surface, text_rect)
+        
+    def show_pause_screen(self):
+        """Показує екран паузи"""
+        # Напівпрозорий фон
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        pygame.draw.rect(overlay, (0, 0, 0, 150), (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen.blit(overlay, (0, 0))
+        
+        # Головний контейнер паузи
+        pause_width, pause_height = 400, 300
+        pause_x = (SCREEN_WIDTH - pause_width) // 2
+        pause_y = (SCREEN_HEIGHT - pause_height) // 2
+        
+        # Фон меню паузи
+        menu_surface = pygame.Surface((pause_width, pause_height), pygame.SRCALPHA)
+        pygame.draw.rect(menu_surface, (30, 30, 60, 220), (0, 0, pause_width, pause_height), border_radius=20)
+        self.screen.blit(menu_surface, (pause_x, pause_y))
+        
+        # Рамка
+        pygame.draw.rect(self.screen, (100, 100, 150), 
+                        (pause_x, pause_y, pause_width, pause_height), width=3, border_radius=20)
+        
+        # Заголовок "ПАУЗА"
+        title_text = self.font_large.render("ПАУЗА", True, TEXT_COLOR)
+        title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, pause_y + 60))
+        self.screen.blit(title_text, title_rect)
+        
+        # Інструкції
+        instructions = [
+            "ПРОБІЛ - продовжити гру",
+            "ESC - головне меню", 
+            "R - нова гра"
+        ]
+        
+        y_offset = pause_y + 120
+        for instruction in instructions:
+            text = self.font_medium.render(instruction, True, TEXT_COLOR)
+            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            self.screen.blit(text, text_rect)
+            y_offset += 40
+
+
+class SettingsMenu:
+    """Клас для меню налаштувань"""
+    
+    def __init__(self, screen, clock):
+        self.screen = screen
+        self.clock = clock
+        self.font_large = pygame.font.SysFont("Arial", 36, bold=True)
+        self.font_medium = pygame.font.SysFont("Arial", 24, bold=True)
+        
+        # Налаштування (поки що заглушки)
+        self.settings = {
+            'sound_enabled': True,
+            'music_enabled': True,
+            'show_grid_lines': True,
+            'auto_save': True
+        }
+    
+    def show_settings_screen(self):
+        """Показує екран налаштувань"""
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return "quit"
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        return "back"
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Перевіряємо, що натиснута саме ліва кнопка миші
+                    if event.button != 1:
+                        continue  # Ігноруємо всі інші кнопки миші
+                    # Тут буде логіка кліку по налаштуваннях
+                    pass
+                elif event.type == pygame.MOUSEWHEEL:
+                    # Ігноруємо прокручування колеса миші
+                    continue
+            
+            # Фон
+            self.screen.fill(BACKGROUND_COLOR)
+            
+            # Заголовок
+            title_text = self.font_large.render("НАЛАШТУВАННЯ", True, TEXT_COLOR)
+            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
+            self.screen.blit(title_text, title_rect)
+            
+            # Налаштування (поки що текстом)
+            y_offset = 200
+            settings_display = [
+                f"Звук: {'Увімкнено' if self.settings['sound_enabled'] else 'Вимкнено'}",
+                f"Музика: {'Увімкнена' if self.settings['music_enabled'] else 'Вимкнена'}",
+                f"Лінії сітки: {'Показувати' if self.settings['show_grid_lines'] else 'Приховати'}",
+                f"Автозбереження: {'Увімкнено' if self.settings['auto_save'] else 'Вимкнено'}"
+            ]
+            
+            for setting in settings_display:
+                text = self.font_medium.render(setting, True, TEXT_COLOR)
+                text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+                self.screen.blit(text, text_rect)
+                y_offset += 50
+            
+            # Інструкція
+            instruction = self.font_medium.render("ESC - повернутися", True, (180, 180, 180))
+            instruction_rect = instruction.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
+            self.screen.blit(instruction, instruction_rect)
+            
+            pygame.display.flip()
+            self.clock.tick(60)
+
+
 # Створюємо глобальні екземпляри для використання в грі
 ui_effects = UIEffects()
-game_over_screen = None  # Ініціалізується в main.py
-game_ui = None          # Ініціалізується в main.py 
-menu_system = None      # Ініціалізується в main.py
+control_panel = None    # Ініціалізується в main.py
+pause_menu = None       # Ініціалізується в main.py
+settings_menu = None    # Ініціалізується в main.py
+game_over_screen = None # Ініціалізується в main.py
+game_ui = None         # Ініціалізується в main.py 
+menu_system = None     # Ініціалізується в main.py
 
 class GameOverScreen:
     """Клас для екрану завершення гри"""
@@ -215,7 +551,7 @@ class GameOverScreen:
         
         # Повідомляємо гравця в консоль
         if is_new_record:
-            print(f"🎉 НОВИЙ РЕКОРД! Очки: {final_score}")
+            print(f"НОВИЙ РЕКОРД! Очки: {final_score}")
             position = records_manager.get_player_position(final_score)
             if position:
                 print(f"Ваша позиція: {position} місце")
@@ -234,11 +570,17 @@ class GameOverScreen:
                 if event.type == pygame.QUIT:
                     return "quit"
                 elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Перевіряємо, що натиснута саме ліва кнопка миші
+                    if event.button != 1:
+                        continue  # Ігноруємо всі інші кнопки миші
                     # Перевіряємо натискання кнопок
                     if try_again_button.collidepoint(event.pos):
                         return "restart"
                     elif menu_button.collidepoint(event.pos):
                         return "menu"
+                elif event.type == pygame.MOUSEWHEEL:
+                    # Ігноруємо прокручування колеса миші
+                    continue
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         return "restart"
@@ -251,7 +593,7 @@ class GameOverScreen:
             # Заголовок
             title_font = pygame.font.SysFont("Arial", FONT_SIZE_LARGE, bold=True)
             if is_new_record:
-                title_text = title_font.render("🎉 НОВИЙ РЕКОРД!", True, PIECE_RED)
+                title_text = title_font.render("НОВИЙ РЕКОРД!", True, PIECE_RED)
             else:
                 title_text = title_font.render("ГРА ЗАВЕРШЕНА", True, TEXT_COLOR)
             title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 150))
@@ -327,27 +669,99 @@ class MenuSystem:
     def __init__(self, screen, clock):
         self.screen = screen
         self.clock = clock
+        self.hovered_button = None  # Кнопка під мишею для ховер ефекту
     
-    def draw_menu_buttons(self):
+    def draw_menu_buttons(self, has_saved_game=False):
         """Малює кнопки головного меню"""
         self.screen.fill(BACKGROUND_COLOR)  
-        font = pygame.font.Font(None, 50)
+        font = pygame.font.Font(None, 36)  # Трохи більший шрифт
         
-        # Кнопка "Грати"
-        play_button = pygame.Rect(SCREEN_WIDTH // 2 - 75, SCREEN_HEIGHT // 2 + 100, BUTTON_WIDTH_SMALL, BUTTON_HEIGHT)
-        pygame.draw.rect(self.screen, BUTTON_COLOR, play_button)
-        play_text = font.render("Грати", True, TEXT_COLOR)
-        play_text_rect = play_text.get_rect(center=play_button.center)
-        self.screen.blit(play_text, play_text_rect)
+        # Визначаємо кількість кнопок залежно від наявності збереження
+        if has_saved_game:
+            buttons_count = 5
+            buttons_data = [
+                ('continue', 'Продовжити', 0),
+                ('play', 'Нова гра', 1),
+                ('records', 'Рекорди', 2),
+                ('settings', 'Налаштування', 3),
+                ('exit', 'Вихід', 4)
+            ]
+        else:
+            buttons_count = 4
+            buttons_data = [
+                ('play', 'Грати', 0),
+                ('records', 'Рекорди', 1),
+                ('settings', 'Налаштування', 2),
+                ('exit', 'Вихід', 3)
+            ]
         
-        # Кнопка "Рекорди"
-        records_button = pygame.Rect(SCREEN_WIDTH // 2 - 75, SCREEN_HEIGHT // 2 + 180, BUTTON_WIDTH_SMALL, BUTTON_HEIGHT)
-        pygame.draw.rect(self.screen, BUTTON_COLOR, records_button)
-        records_text = font.render("Рекорди", True, TEXT_COLOR)
-        records_text_rect = records_text.get_rect(center=records_button.center)
-        self.screen.blit(records_text, records_text_rect)
-
-        return play_button, records_button
+        # Розраховуємо центральне розташування кнопок
+        button_spacing = 70  # Трохи менша відстань між кнопками
+        total_height = buttons_count * BUTTON_HEIGHT + (buttons_count - 1) * button_spacing
+        start_y = (SCREEN_HEIGHT - total_height) // 2
+        
+        button_objects = []
+        
+        for button_id, text, index in buttons_data:
+            y_pos = start_y + index * (BUTTON_HEIGHT + button_spacing)
+            
+            # Створюємо кнопку
+            button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, y_pos, 200, BUTTON_HEIGHT)
+            
+            # Визначаємо кольори залежно від ховера
+            is_hovered = self.hovered_button == button_id
+            if is_hovered:
+                button_color = CONTROL_BUTTON_HOVER
+                text_color = WHITE
+            else:
+                button_color = CONTROL_BUTTON_COLOR
+                text_color = CONTROL_BUTTON_TEXT
+            
+            # Малюємо кнопку з заокругленими кутами та рамкою як в меню паузи
+            pygame.draw.rect(self.screen, button_color, button_rect, border_radius=8)
+            pygame.draw.rect(self.screen, WHITE, button_rect, 2, border_radius=8)
+            
+            # Малюємо текст
+            text_surface = font.render(text, True, text_color)
+            text_rect = text_surface.get_rect(center=button_rect.center)
+            self.screen.blit(text_surface, text_rect)
+            
+            button_objects.append((button_id, button_rect))
+        
+        return button_objects
+    
+    def handle_menu_hover(self, mouse_pos, has_saved_game=False):
+        """Обробляє ховер ефекти для кнопок меню"""
+        # Визначаємо кількість кнопок залежно від наявності збереження
+        if has_saved_game:
+            buttons_count = 5
+            buttons_data = [
+                ('continue', 0),
+                ('play', 1),
+                ('records', 2),
+                ('settings', 3),
+                ('exit', 4)
+            ]
+        else:
+            buttons_count = 4
+            buttons_data = [
+                ('play', 0),
+                ('records', 1),
+                ('settings', 2),
+                ('exit', 3)
+            ]
+        
+        button_spacing = 70
+        total_height = buttons_count * BUTTON_HEIGHT + (buttons_count - 1) * button_spacing
+        start_y = (SCREEN_HEIGHT - total_height) // 2
+        
+        self.hovered_button = None
+        for button_id, index in buttons_data:
+            y_pos = start_y + index * (BUTTON_HEIGHT + button_spacing)
+            button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, y_pos, 200, BUTTON_HEIGHT)
+            if button_rect.collidepoint(mouse_pos):
+                self.hovered_button = button_id
+                break
     
     def show_records_screen(self, records_manager):
         """Показує екран з рекордами"""
@@ -359,13 +773,20 @@ class MenuSystem:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         return  # Повертаємося до головного меню
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Перевіряємо, що натиснута саме ліва кнопка миші
+                    if event.button != 1:
+                        continue  # Ігноруємо всі інші кнопки миші
+                elif event.type == pygame.MOUSEWHEEL:
+                    # Ігноруємо прокручування колеса миші
+                    continue
             
             # Малюємо фон
             self.screen.fill(BACKGROUND_COLOR)
             
             # Заголовок
             title_font = pygame.font.SysFont("Arial", FONT_SIZE_LARGE, bold=True)
-            title_text = title_font.render("🏆 ТАБЛИЦЯ РЕКОРДІВ", True, MENU_TITLE_COLOR)
+            title_text = title_font.render("ТАБЛИЦЯ РЕКОРДІВ", True, MENU_TITLE_COLOR)
             title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
             self.screen.blit(title_text, title_rect)
             
@@ -426,22 +847,55 @@ class MenuSystem:
         self.screen.fill(WHITE)
         pygame.display.update()
     
-    def main_menu_loop(self, records_manager, background_image):
+    def main_menu_loop(self, records_manager, background_image, save_manager=None):
         """Основний цикл меню"""
         # Показуємо заставку
         self.show_splash_screen(background_image)
         
+        # Створюємо об'єкт налаштувань для меню
+        settings_menu = SettingsMenu(self.screen, self.clock)
+        
         while True:
-            play_button, records_button = self.draw_menu_buttons()
+            # Перевіряємо наявність збереженої гри
+            has_saved_game = save_manager.has_saved_game() if save_manager else False
+            
+            # Обробляємо ховер ефекти
+            mouse_pos = pygame.mouse.get_pos()
+            self.handle_menu_hover(mouse_pos, has_saved_game)
+            
+            buttons = self.draw_menu_buttons(has_saved_game)
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if play_button.collidepoint(event.pos):
-                        return  # Вихід із меню, початок гри
-                    elif records_button.collidepoint(event.pos):
-                        self.show_records_screen(records_manager)  # Показуємо рекорди
+                    # Перевіряємо, що натиснута саме ліва кнопка миші
+                    if event.button != 1:
+                        continue
+                    
+                    # Обробляємо кліки по кнопках
+                    for button_id, button_rect in buttons:
+                        if button_rect.collidepoint(event.pos):
+                            if button_id == 'continue':
+                                return 'continue'  # Продовжити збережену гру
+                            elif button_id == 'play':
+                                return 'new_game'  # Нова гра
+                            elif button_id == 'records':
+                                self.show_records_screen(records_manager)
+                                break
+                            elif button_id == 'settings':
+                                result = settings_menu.show_settings_screen()
+                                if result == "quit":
+                                    pygame.quit()
+                                    exit()
+                                break
+                            elif button_id == 'exit':
+                                pygame.quit()
+                                exit()
+                            break
+                elif event.type == pygame.MOUSEWHEEL:
+                    continue
 
             pygame.display.update()
             self.clock.tick(60)

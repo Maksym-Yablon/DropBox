@@ -11,6 +11,7 @@ from records import records_manager
 from save_manager import game_save_manager
 from cash import cash_manager
 from shop import Shop
+from sound import sound_manager
 
 # Ініціалізація Pygame
 pygame.init()
@@ -113,6 +114,9 @@ def game_over():
     """Обробляє завершення гри та збереження рекорду"""
     final_score = grid.score
     
+    # Відтворюємо звук гейм овер
+    sound_manager.play_game_over_sound()
+    
     # Додаємо рекорд
     is_new_record = records_manager.add_record(final_score)
     
@@ -156,6 +160,9 @@ def reset_game():
     """Скидає гру до початкового стану"""
     global grid, piece_box, dragging, dragged_piece, dragged_piece_index, drag_offset_x, drag_offset_y, drag_block_col, drag_block_row, game_over_check_counter
     
+    # Відтворюємо звук нової гри
+    sound_manager.play_new_game_sound()
+    
     # Створюємо нову сітку
     grid = grid_module.Grid()
     
@@ -177,6 +184,9 @@ def reset_game():
 
 # Показуємо заставку та меню
 menu_result = menu_system.main_menu_loop(records_manager, get_background_image(), game_save_manager)
+
+# Запускаємо фонову музику
+sound_manager.start_background_music()
 
 # Перевіряємо результат меню
 if menu_result == 'continue':

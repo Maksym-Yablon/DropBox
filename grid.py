@@ -1,3 +1,4 @@
+from builtins import range
 import pygame
 import random
 from constants import *
@@ -154,6 +155,10 @@ class Grid:
         if total_cleared > 0:
             if self.last_clear_success:
                 self.combo_multiplier += 1  # Збільшуємо множник
+                # Відтворюємо звук комбо при множнику 2 і більше
+                if self.combo_multiplier >= 2:
+                    from sound import sound_manager
+                    sound_manager.play_combo_sound(self.combo_multiplier)
             else:
                 self.combo_multiplier = 1  # Скидаємо множник
             self.last_clear_success = True
@@ -231,6 +236,11 @@ class Grid:
                     self.cells[target_row][target_col] = piece.color  # Зберігаємо колір фігури
         
         self.score += 1
+        
+        # Відтворюємо звук розміщення фігури
+        from sound import sound_manager
+        sound_manager.play_pick_sound()
+        
         return True
     
     def highlight_position(self, surface, grid_x, grid_y, piece, cell_size=GRID_CELL_SIZE, valid=True):

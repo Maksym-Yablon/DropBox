@@ -1,3 +1,4 @@
+from builtins import range
 import pygame
 import math
 import time
@@ -461,25 +462,112 @@ class PauseMenu:
 
 
 class SettingsMenu:
-    """Клас для меню налаштувань"""
+    """Клас для меню налаштувань з регуляторами звуку"""
     
     def __init__(self, screen, clock):
         self.screen = screen
         self.clock = clock
         self.font_large = pygame.font.SysFont("Arial", 36, bold=True)
         self.font_medium = pygame.font.SysFont("Arial", 24, bold=True)
+        self.font_small = pygame.font.SysFont("Arial", 18, bold=True)
         
-        # Налаштування (поки що заглушки)
-        self.settings = {
-            'sound_enabled': True,
-            'music_enabled': True,
-            'show_grid_lines': True,
-            'auto_save': True
-        }
+        # Імпортуємо звуковий менеджер
+        from sound import sound_manager
+        self.sound_manager = sound_manager
+        
+        # Налаштування регуляторів
+        self.slider_width = 300
+        self.slider_height = 20
+        self.knob_size = 30
+        
+        # Позиції регуляторів
+        self.sfx_slider_rect = pygame.Rect(
+            (SCREEN_WIDTH - self.slider_width) // 2,
+            250,
+            self.slider_width,
+            self.slider_height
+        )
+        
+        self.music_slider_rect = pygame.Rect(
+            (SCREEN_WIDTH - self.slider_width) // 2,
+            350,
+            self.slider_width,
+            self.slider_height
+        )
+        
+        # Стан перетягування
+        self.dragging_sfx = False
+        self.dragging_music = False
+        
+    def get_knob_position(self, slider_rect, volume):
+        """Розраховує позицію повзунка на основі гучності"""
+        return slider_rect.x + (volume * slider_rect.width)
+    
+    def get_volume_from_position(self, slider_rect, mouse_x):
+        """Розраховує гучність на основі позиції миші"""
+        relative_x = mouse_x - slider_rect.x
+        volume = relative_x / slider_rect.width
+        return max(0.0, min(1.0, volume))
+    
+    def draw_slider(self, slider_rect, volume, label, disabled=False):
+        """Малює регулятор гучності"""
+        # Колір регулятора
+        slider_color = (100, 100, 100) if disabled else (70, 130, 180)
+        track_color = (50, 50, 50) if disabled else (40, 80, 120)
+        knob_color = (150, 150, 150) if disabled else (255, 255, 255)
+        
+        # Малюємо трек регулятора
+        pygame.draw.rect(self.screen, track_color, slider_rect, border_radius=10)
+        pygame.draw.rect(self.screen, slider_color, slider_rect, 3, border_radius=10)
+        
+        # Малюємо заповнену частину
+        if volume > 0:
+            filled_width = volume * slider_rect.width
+            filled_rect = pygame.Rect(
+                slider_rect.x,
+                slider_rect.y,
+                filled_width,
+                slider_rect.height
+            )
+            pygame.draw.rect(self.screen, slider_color, filled_rect, border_radius=10)
+        
+        # Малюємо повзунок
+        knob_x = self.get_knob_position(slider_rect, volume)
+        knob_y = slider_rect.y + slider_rect.height // 2
+        pygame.draw.circle(self.screen, knob_color, (int(knob_x), int(knob_y)), self.knob_size // 2)
+        pygame.draw.circle(self.screen, (0, 0, 0), (int(knob_x), int(knob_y)), self.knob_size // 2, 2)
+        
+        # Малюємо підпис
+        label_text = self.font_medium.render(label, True, TEXT_COLOR)
+        label_rect = label_text.get_rect(center=(slider_rect.centerx, slider_rect.y - 30))
+        self.screen.blit(label_text, label_rect)
+        
+        # Малюємо значення гучності
+        volume_percent = int(volume * 100)
+        volume_text = self.font_small.render(f"{volume_percent}%", True, TEXT_COLOR)
+        volume_rect = volume_text.get_rect(center=(slider_rect.centerx, slider_rect.y + 40))
+        self.screen.blit(volume_text, volume_rect)
+        
+        # Статус (увімкнено/вимкнено)
+        status = "Увімкнено" if volume > 0 else "Вимкнено"
+        status_color = (0, 255, 0) if volume > 0 else (255, 100, 100)
+        status_text = self.font_small.render(status, True, status_color)
+        status_rect = status_text.get_rect(center=(slider_rect.centerx, slider_rect.y + 60))
+        self.screen.blit(status_text, status_rect)
+    
+    def is_point_in_knob(self, slider_rect, volume, mouse_pos):
+        """Перевіряє, чи натиснута миша на повзунку"""
+        knob_x = self.get_knob_position(slider_rect, volume)
+        knob_y = slider_rect.y + slider_rect.height // 2
+        
+        distance = ((mouse_pos[0] - knob_x) ** 2 + (mouse_pos[1] - knob_y) ** 2) ** 0.5
+        return distance <= self.knob_size // 2
     
     def show_settings_screen(self):
         """Показує екран налаштувань"""
         while True:
+            mouse_pos = pygame.mouse.get_pos()
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return "quit"
@@ -487,41 +575,106 @@ class SettingsMenu:
                     if event.key == pygame.K_ESCAPE:
                         return "back"
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Перевіряємо, що натиснута саме ліва кнопка миші
-                    if event.button != 1:
-                        continue  # Ігноруємо всі інші кнопки миші
-                    # Тут буде логіка кліку по налаштуваннях
-                    pass
-                elif event.type == pygame.MOUSEWHEEL:
-                    # Ігноруємо прокручування колеса миші
-                    continue
+                    if event.button != 1:  # Тільки ліва кнопка миші
+                        continue
+                        
+                    # Перевіряємо кліки по повзункам
+                    if self.is_point_in_knob(self.sfx_slider_rect, self.sound_manager.sfx_volume, mouse_pos):
+                        self.dragging_sfx = True
+                    elif self.is_point_in_knob(self.music_slider_rect, self.sound_manager.music_volume, mouse_pos):
+                        self.dragging_music = True
+                    elif self.sfx_slider_rect.collidepoint(mouse_pos):
+                        # Клік по треку SFX регулятора
+                        new_volume = self.get_volume_from_position(self.sfx_slider_rect, mouse_pos[0])
+                        self.sound_manager.set_sfx_volume(new_volume)
+                        self.dragging_sfx = True
+                    elif self.music_slider_rect.collidepoint(mouse_pos):
+                        # Клік по треку музичного регулятора
+                        new_volume = self.get_volume_from_position(self.music_slider_rect, mouse_pos[0])
+                        self.sound_manager.set_music_volume(new_volume)
+                        # Якщо музика була вимкнена (volume = 0) і тепер увімкнена
+                        if new_volume > 0 and not self.sound_manager.is_music_enabled():
+                            self.sound_manager.music_enabled = True
+                            self.sound_manager.start_background_music()
+                        elif new_volume == 0:
+                            self.sound_manager.music_enabled = False
+                            self.sound_manager.stop_background_music()
+                        self.dragging_music = True
+                        
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:  # Ліва кнопка миші
+                        self.dragging_sfx = False
+                        self.dragging_music = False
+                        
+                elif event.type == pygame.MOUSEMOTION:
+                    if self.dragging_sfx:
+                        new_volume = self.get_volume_from_position(self.sfx_slider_rect, mouse_pos[0])
+                        old_volume = self.sound_manager.sfx_volume
+                        self.sound_manager.set_sfx_volume(new_volume)
+                        
+                        # Тестовий звук при зміні гучності (не частіше ніж кожні 100мс)
+                        if abs(new_volume - old_volume) > 0.05 and new_volume > 0:
+                            current_time = pygame.time.get_ticks()
+                            if not hasattr(self, 'last_sfx_test_time'):
+                                self.last_sfx_test_time = 0
+                            if current_time - self.last_sfx_test_time > 100:
+                                self.sound_manager.play_pick_sound()
+                                self.last_sfx_test_time = current_time
+                        
+                        # Увімкнення/вимкнення звуку
+                        if new_volume > 0 and not self.sound_manager.is_sound_enabled():
+                            self.sound_manager.sound_enabled = True
+                        elif new_volume == 0:
+                            self.sound_manager.sound_enabled = False
+                            
+                    elif self.dragging_music:
+                        new_volume = self.get_volume_from_position(self.music_slider_rect, mouse_pos[0])
+                        self.sound_manager.set_music_volume(new_volume)
+                        # Увімкнення/вимкнення музики
+                        if new_volume > 0 and not self.sound_manager.is_music_enabled():
+                            self.sound_manager.music_enabled = True
+                            self.sound_manager.start_background_music()
+                        elif new_volume == 0:
+                            self.sound_manager.music_enabled = False
+                            self.sound_manager.stop_background_music()
             
             # Фон
             self.screen.fill(BACKGROUND_COLOR)
             
             # Заголовок
-            title_text = self.font_large.render("НАЛАШТУВАННЯ", True, TEXT_COLOR)
+            title_text = self.font_large.render("НАЛАШТУВАННЯ ЗВУКУ", True, TEXT_COLOR)
             title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
             self.screen.blit(title_text, title_rect)
             
-            # Налаштування (поки що текстом)
-            y_offset = 200
-            settings_display = [
-                f"Звук: {'Увімкнено' if self.settings['sound_enabled'] else 'Вимкнено'}",
-                f"Музика: {'Увімкнена' if self.settings['music_enabled'] else 'Вимкнена'}",
-                f"Лінії сітки: {'Показувати' if self.settings['show_grid_lines'] else 'Приховати'}",
-                f"Автозбереження: {'Увімкнено' if self.settings['auto_save'] else 'Вимкнено'}"
-            ]
+            # Малюємо регулятори
+            self.draw_slider(self.sfx_slider_rect, self.sound_manager.sfx_volume, "Гучність ефектів")
+            self.draw_slider(self.music_slider_rect, self.sound_manager.music_volume, "Гучність музики")
             
-            for setting in settings_display:
-                text = self.font_medium.render(setting, True, TEXT_COLOR)
-                text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
-                self.screen.blit(text, text_rect)
-                y_offset += 50
+            # Кнопка "Назад"
+            back_button_rect = pygame.Rect(
+                (SCREEN_WIDTH - 200) // 2,
+                SCREEN_HEIGHT - 100,
+                200,
+                50
+            )
+            
+            # Перевіряємо наведення миші на кнопку "Назад"
+            button_color = BUTTON_HOVER_COLOR if back_button_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+            
+            pygame.draw.rect(self.screen, button_color, back_button_rect, border_radius=10)
+            pygame.draw.rect(self.screen, (255, 255, 255), back_button_rect, 3, border_radius=10)
+            
+            back_text = self.font_medium.render("Назад", True, TEXT_COLOR)
+            back_text_rect = back_text.get_rect(center=back_button_rect.center)
+            self.screen.blit(back_text, back_text_rect)
+            
+            # Перевіряємо клік по кнопці "Назад"
+            if pygame.mouse.get_pressed()[0] and back_button_rect.collidepoint(mouse_pos):
+                return "back"
             
             # Інструкція
-            instruction = self.font_medium.render("ESC - повернутися", True, (180, 180, 180))
-            instruction_rect = instruction.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
+            instruction = self.font_small.render("Перетягуйте повзунки для зміни гучності • ESC - повернутися", True, (180, 180, 180))
+            instruction_rect = instruction.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
             self.screen.blit(instruction, instruction_rect)
             
             pygame.display.flip()

@@ -532,16 +532,17 @@ saves/
 *.save
 
 # Screenshots
+# Screenshots (але зберігаємо ігрові ресурси)
 screenshots/
-*.png
-*.jpg
+# *.png  # Закоментовано - дозволяємо PNG файли для спрайтів
+# *.jpg  # Закоментовано - дозволяємо JPG файли для спрайтів  
 !image/icon.png  # Keep the game icon
 
-# Sound files (if added later)
-sounds/
-*.wav
-*.mp3
-*.ogg
+# Sound files - дозволяємо звуки для гри
+# sounds/  # Закоментовано - дозволяємо папку sounds
+# *.wav   # Закоментовано - дозволяємо WAV файли для гри
+# *.mp3   # Закоментовано - дозволяємо MP3 файли для гри
+# *.ogg   # Закоментовано - дозволяємо OGG файли для гри
 
 # ===== END PYTHON SPECIFIC =====
 

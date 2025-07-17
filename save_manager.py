@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from cash import cash_manager
 
 class GameSaveManager:
     """Клас для збереження та завантаження прогресу гри"""
@@ -42,6 +43,7 @@ class GameSaveManager:
             save_data = {
                 "has_save": True,
                 "score": grid.score,
+                "catcoins": cash_manager.get_balance(),  # Зберігаємо баланс catcoin
                 "grid_cells": grid_data,
                 "pieces_in_box": pieces_data,
                 "save_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -91,6 +93,7 @@ class GameSaveManager:
             
             loaded_data = {
                 "score": save_data["score"],
+                "catcoins": save_data.get("catcoins", 0),  # Завантажуємо catcoin (0 за замовчуванням)
                 "grid_cells": grid_cells,
                 "pieces_in_box": pieces_data,
                 "save_date": save_data["save_date"]

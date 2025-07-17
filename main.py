@@ -9,6 +9,8 @@ from piece import PieceBox, Piece
 from ui import ui_effects, GameOverScreen, GameUI, MenuSystem, PauseButton, PauseMenu, SettingsMenu
 from records import records_manager
 from save_manager import game_save_manager
+from cash import cash_manager
+from shop import Shop
 
 # Ініціалізація Pygame
 pygame.init()
@@ -46,6 +48,14 @@ CACHED_SCALE_FACTOR = PIECE_CELL_SIZE / PIECE_CONTAINER_CELL_SIZE
 game_over_check_counter = 0
 GAME_OVER_CHECK_INTERVAL = 30  # Перевіряємо кожні пів секунди замість кожного кадру
 
+# Ініціалізуємо магазин (зліва від ігрового поля, вирівнюється з блоком фігур)
+shop_font = pygame.font.Font(None, 28)  # Збільшений розмір шрифту
+shop_x = 50
+shop_y = CACHED_CONTAINER_CENTER_Y  # Використовуємо ту ж вертикальну позицію що й блок фігур
+shop_width = PIECE_CONTAINER_WIDTH
+shop_height = PIECE_CONTAINER_HEIGHT
+shop = Shop(shop_x, shop_y, shop_width, shop_height, shop_font)
+
 
 def create_piece_container(x_position):
     """Створює контейнер для фігур з кешованими значеннями (оптимізація)"""
@@ -72,6 +82,9 @@ def load_saved_game():
         # Відновлюємо стан сітки
         grid.score = saved_data["score"]
         grid.cells = saved_data["grid_cells"]
+        
+        # Відновлюємо баланс catcoin
+        cash_manager.set_balance(saved_data.get("catcoins", 0))
         
         # Відновлюємо фігури в коробці
         piece_box = create_piece_container(1000)
@@ -148,6 +161,9 @@ def reset_game():
     
     # Створюємо нову коробку з фігурами (використовуємо кешовані значення)
     piece_box = create_piece_container(1000)
+    
+    # Скидаємо баланс catcoin
+    cash_manager.set_balance(0)
     
     # Скидаємо стан перетягування
     dragging = False
@@ -249,6 +265,20 @@ while running:
                 pause_menu.toggle_pause()
                 continue  # Пропускаємо обробку перетягування фігур
             
+            # Перевіряємо клік по магазину (якщо гра не на паузі)
+            if not pause_menu.is_paused:
+                shop_item_index = shop.handle_mouse_event(mouse_pos)
+                if shop_item_index is not None:
+                    # Спроба купити товар
+                    purchased_item = shop.buy_selected()
+                    if purchased_item:
+                        # Тут можна додати логіку застосування купленого товару
+                        if purchased_item.name == "Тест товар":
+                            print("Тестовий товар куплено успішно!")
+                        elif purchased_item.name == "Підказка":
+                            print("Підказка куплена! (функція ще не реалізована)")
+                    continue  # Пропускаємо обробку перетягування фігур
+            
             # Почати перетягування фігур (тільки якщо гра не на паузі)
             if not pause_menu.is_paused:
                 clicked_piece_index, offset_x, offset_y = get_piece_at_mouse(mouse_pos)
@@ -284,9 +314,18 @@ while running:
                 placed = False
                 # Перевіряємо, чи можна розмістити фігуру
                 if grid.can_place_piece(dragged_piece, target_grid_x, target_grid_y):
+                    # Зберігаємо поточний рахунок перед розміщенням
+                    old_score = grid.score
+                    
                     # Розміщуємо фігуру на сітці
                     grid.place_piece(dragged_piece, target_grid_x, target_grid_y)
                     grid.clear_lines()  # Перевіряємо на очищення ліній
+                    
+                    # Обчислюємо нарахованих очок та конвертуємо в catcoin
+                    score_increase = grid.score - old_score
+                    if score_increase > 0:
+                        cash_manager.update_from_score(score_increase)
+                    
                     placed = True
                 else:
                     print("Неможливо розмістити фігуру тут")
@@ -322,6 +361,10 @@ while running:
     # Відображаємо HUD (очки та рекорд)
     best_score = records_manager.get_best_score()
     game_ui.draw_hud(grid.score, best_score)
+
+    # Малюємо магазин (тільки якщо гра не на паузі)
+    if not pause_menu.is_paused:
+        shop.draw(screen)
 
     # Малюємо кнопку паузи (тільки якщо гра не на паузі)
     if not pause_menu.is_paused:

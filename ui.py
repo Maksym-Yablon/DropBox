@@ -642,19 +642,24 @@ class GameUI:
     
     def __init__(self, screen):
         self.screen = screen
-        self.score_font = pygame.font.SysFont("Arial", FONT_SIZE, bold=True)
-        self.record_font = pygame.font.SysFont("Arial", FONT_SIZE_SMALL, bold=True)
+        self.score_font = pygame.font.SysFont("Arial",  int(FONT_SIZE * 0.9), bold=True)
+        # Зменшуємо шрифт рекорда на 20% (24 * 0.8 = 19.2 ≈ 19)
+        self.record_font = pygame.font.SysFont("Arial", int(FONT_SIZE_SMALL * 0.8), bold=True)
     
     def draw_hud(self, score, best_score):
         """Малює HUD (очки та рекорд)"""
-        # Відображаємо очки у верхньому лівому куті
-        score_text = self.score_font.render(f"Очки: {score}", True, TEXT_COLOR)
-        self.screen.blit(score_text, (30, 30))
+        # Обчислюємо зміщення: 2% від розмірів екрану
+        offset_x = int(SCREEN_WIDTH * 0.02)  # 2% вліво
+        offset_y = int(SCREEN_HEIGHT * 0.02)  # 2% вгору
         
-        # Відображаємо найкращий рекорд
+        # Відображаємо рекорд у верхньому лівому куті (перша позиція)
         record_text = self.record_font.render(f"Рекорд: {best_score}", True, TEXT_COLOR)
-        self.screen.blit(record_text, (30, 80))
+        self.screen.blit(record_text, (35 - offset_x, offset_y))
         
+        # Відображаємо очки нижче рекорда (друга позиція) зі зміщенням
+        score_text = self.score_font.render(f"Очки: {score}", True, TEXT_COLOR)
+        self.screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2,  offset_y))
+
         # Показуємо просту підказку
         hints_font = pygame.font.SysFont("Arial", 18)
         hint_text = hints_font.render("N - Нова гра", True, (180, 180, 180))

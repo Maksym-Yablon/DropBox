@@ -1,3 +1,4 @@
+from builtins import range
 import pygame
 import random
 from constants import *
@@ -35,7 +36,7 @@ class Piece:
                 # Створюємо одну поверхню для всієї фігури
                 figure_surface = pygame.Surface((width, height), pygame.SRCALPHA)
                 
-                for row in range(len(self.shape)):
+                for row in range(len(self.shape)): # type: ignore
                     for col in range(len(self.shape[row])):
                         if self.shape[row][col] == 1:
                             margin = PIECE_MARGIN
@@ -403,7 +404,21 @@ class PieceBox:
         """Перевіряє, чи клікнули на фігуру в коробці з урахуванням слотів"""
         piece_index, piece, abs_x, abs_y, offset = self._get_piece_at_position(mouse_x, mouse_y)
         if piece_index is not None:
-            return piece_index, offset[0], offset[1]
+            offset_x, offset_y = offset
+            
+            # ВИПРАВЛЕННЯ: Перевіряємо, чи клік потрапив саме на блок фігури (зі значенням 1)
+            block_col = offset_x // self.cell_size
+            block_row = offset_y // self.cell_size
+            
+            # Якщо клік потрапив на порожнє місце (0), то не беремо фігуру
+            if (0 <= block_row < len(piece.shape) and 
+                0 <= block_col < len(piece.shape[0]) and
+                piece.shape[block_row][block_col] == 1):
+                
+                return piece_index, offset_x, offset_y
+            else:
+                # Клік потрапив на порожнє місце - не беремо фігуру
+                return None, None, None
         return None, None, None
 
     def get_block_position_in_piece(self, mouse_x, mouse_y):
@@ -416,7 +431,7 @@ class PieceBox:
             block_col = offset_x // self.cell_size
             block_row = offset_y // self.cell_size
             
-            # Перевіряємо, чи це дійсно блок фігури
+            # ВИПРАВЛЕННЯ: Перевіряємо, чи це дійсно блок фігури (зі значенням 1)
             if (0 <= block_row < len(piece.shape) and 
                 0 <= block_col < len(piece.shape[0]) and
                 piece.shape[block_row][block_col] == 1):

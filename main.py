@@ -1,3 +1,4 @@
+from builtins import range
 import pygame
 from sys import exit
 

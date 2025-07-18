@@ -6,12 +6,13 @@ from sys import exit
 from constants import *
 import grid as grid_module
 from piece import PieceBox, Piece
-from ui import ui_effects, GameOverScreen, GameUI, MenuSystem, PauseButton, PauseMenu, SettingsMenu
+from ui import ui_effects, GameOverScreen, GameUI, MenuSystem, PauseButton, PauseMenu, SettingsMenu, CustomCursor
 from records import records_manager
 from save_manager import game_save_manager
 from cash import cash_manager
 from shop import Shop
 from sound import sound_manager
+from frame import FrameManager
 
 # Ініціалізація Pygame
 pygame.init()
@@ -28,6 +29,8 @@ menu_system = MenuSystem(screen, clock)
 pause_button = PauseButton()
 pause_menu = PauseMenu()
 settings_menu = SettingsMenu(screen, clock)
+frame_manager = FrameManager()  # Менеджер рамок
+custom_cursor = CustomCursor()  # Кастомний курсор
 
 
 # Основний цикл гри (запускається після натискання "Грати")
@@ -204,6 +207,10 @@ else:
     reset_game()
 
 while running:
+    # Переконуємося, що стандартний курсор завжди прихований
+    if pygame.mouse.get_visible():
+        pygame.mouse.set_visible(False)
+    
     # Кешуємо позицію миші один раз на початку кадру для оптимізації
     mouse_x, mouse_y = pygame.mouse.get_pos()
     mouse_pos = (mouse_x, mouse_y)
@@ -218,6 +225,9 @@ while running:
             pause_button.handle_mouse_motion(mouse_pos)
     
     for event in pygame.event.get():
+        # Обробляємо події для кастомного курсора
+        custom_cursor.handle_mouse_event(event)
+        
         if event.type == pygame.QUIT:
             running = False
             
@@ -391,10 +401,14 @@ while running:
     # код гри (тільки якщо не на паузі)
     screen.fill(BACKGROUND_COLOR)
     grid.draw(screen)  # малюємо ігрове поле
+    
+    # Оновлюємо та малюємо рамку залежно від рахунку
+    frame_manager.update_frame(grid.score)
+    frame_manager.draw(screen)
 
     # Відображаємо HUD (очки та рекорд)
     best_score = records_manager.get_best_score()
-    game_ui.draw_hud(grid.score, best_score)
+    game_ui.draw_hud(grid.score, best_score, frame_manager)
 
     # Малюємо магазин (тільки якщо гра не на паузі)
     if not pause_menu.is_paused:
@@ -477,11 +491,17 @@ while running:
     if pause_menu.is_paused:
         pause_menu.draw(screen)
     
+    # Малюємо кастомний курсор поверх всього
+    custom_cursor.draw(screen, mouse_pos)
+    
     pygame.display.flip() # Оновлюємо екран
     clock.tick(60) # FPS в грі
 
 # Зберігаємо гру при виході
 save_current_game()
+
+# Очищуємо кастомний курсор при виході
+custom_cursor.cleanup()
 
 pygame.quit()
 exit()

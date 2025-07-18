@@ -582,14 +582,22 @@ class SettingsMenu:
     
     def show_settings_screen(self):
         """Показує екран налаштувань"""
+        # Створюємо кастомний курсор для екрану налаштувань
+        settings_cursor = CustomCursor()
+        
         while True:
             mouse_pos = pygame.mouse.get_pos()
             
             for event in pygame.event.get():
+                # Обробляємо події для кастомного курсора
+                settings_cursor.handle_mouse_event(event)
+                
                 if event.type == pygame.QUIT:
+                    settings_cursor.cleanup()
                     return "quit"
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
+                        settings_cursor.cleanup()
                         return "back"
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button != 1:  # Тільки ліва кнопка миші
@@ -687,12 +695,16 @@ class SettingsMenu:
             
             # Перевіряємо клік по кнопці "Назад"
             if pygame.mouse.get_pressed()[0] and back_button_rect.collidepoint(mouse_pos):
+                settings_cursor.cleanup()
                 return "back"
             
             # Інструкція
             instruction = self.font_small.render("Перетягуйте повзунки для зміни гучності • ESC - повернутися", True, (180, 180, 180))
             instruction_rect = instruction.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
             self.screen.blit(instruction, instruction_rect)
+            
+            # Малюємо кастомний курсор поверх всього
+            settings_cursor.draw(self.screen, mouse_pos)
             
             pygame.display.flip()
             self.clock.tick(60)
@@ -815,7 +827,7 @@ class GameUI:
         self.score_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HUD_SCORE, bold=UI_USE_BOLD_FONTS)
         self.record_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HUD_RECORD, bold=UI_USE_BOLD_FONTS)
     
-    def draw_hud(self, score, best_score):
+    def draw_hud(self, score, best_score, frame_manager=None):
         """Малює HUD (очки та рекорд)"""
         # Обчислюємо зміщення: 2% від розмірів екрану
         offset_x = int(SCREEN_WIDTH * 0.02)  # 2% вліво
@@ -828,6 +840,8 @@ class GameUI:
         # Відображаємо очки нижче рекорда (друга позиція) зі зміщенням
         score_text = self.score_font.render(f"Очки: {score}", True, UI_HUD_SCORE_COLOR)
         self.screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2,  offset_y))
+
+        # Прибираємо підсказки про рамки - це має бути сюрприз!
 
         # Показуємо просту підказку
         hints_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HINTS)
@@ -939,13 +953,23 @@ class MenuSystem:
     
     def show_records_screen(self, records_manager):
         """Показує екран з рекордами"""
+        # Створюємо кастомний курсор для екрану рекордів
+        records_cursor = CustomCursor()
+        
         while True:
+            mouse_pos = pygame.mouse.get_pos()
+            
             for event in pygame.event.get():
+                # Обробляємо події для кастомного курсора
+                records_cursor.handle_mouse_event(event)
+                
                 if event.type == pygame.QUIT:
+                    records_cursor.cleanup()
                     pygame.quit()
                     exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
+                        records_cursor.cleanup()
                         return  # Повертаємося до головного меню
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     # Перевіряємо, що натиснута саме ліва кнопка миші
@@ -1008,6 +1032,9 @@ class MenuSystem:
             instruction_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
             self.screen.blit(instruction_text, instruction_rect)
             
+            # Малюємо кастомний курсор поверх всього
+            records_cursor.draw(self.screen, mouse_pos)
+            
             pygame.display.flip()
             self.clock.tick(60)
     
@@ -1029,6 +1056,9 @@ class MenuSystem:
         # Створюємо об'єкт налаштувань для меню
         settings_menu = SettingsMenu(self.screen, self.clock)
         
+        # Створюємо кастомний курсор для меню
+        menu_cursor = CustomCursor()
+        
         while True:
             # Перевіряємо наявність збереженої гри
             has_saved_game = save_manager.has_saved_game() if save_manager else False
@@ -1040,7 +1070,11 @@ class MenuSystem:
             buttons = self.draw_menu_buttons(has_saved_game)
             
             for event in pygame.event.get():
+                # Обробляємо події для кастомного курсора
+                menu_cursor.handle_mouse_event(event)
+                
                 if event.type == pygame.QUIT:
+                    menu_cursor.cleanup()
                     pygame.quit()
                     exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -1052,8 +1086,10 @@ class MenuSystem:
                     for button_id, button_rect in buttons:
                         if button_rect.collidepoint(event.pos):
                             if button_id == 'continue':
+                                menu_cursor.cleanup()
                                 return 'continue'  # Продовжити збережену гру
                             elif button_id == 'play':
+                                menu_cursor.cleanup()
                                 return 'new_game'  # Нова гра
                             elif button_id == 'records':
                                 self.show_records_screen(records_manager)
@@ -1061,15 +1097,105 @@ class MenuSystem:
                             elif button_id == 'settings':
                                 result = settings_menu.show_settings_screen()
                                 if result == "quit":
+                                    menu_cursor.cleanup()
                                     pygame.quit()
                                     exit()
                                 break
                             elif button_id == 'exit':
+                                menu_cursor.cleanup()
                                 pygame.quit()
                                 exit()
                             break
                 elif event.type == pygame.MOUSEWHEEL:
                     continue
 
+            # Малюємо кастомний курсор поверх всього
+            menu_cursor.draw(self.screen, mouse_pos)
+            
             pygame.display.update()
             self.clock.tick(60)
+
+
+class CustomCursor:
+    """Клас для кастомного ігрового курсора"""
+    
+    def __init__(self):
+        self.normal_cursor = None
+        self.clicked_cursor = None
+        self.current_cursor = None
+        self.is_clicking = False
+        self.cursor_offset_x = 0
+        self.cursor_offset_y = 0
+        
+        # Завантажуємо курсори
+        self._load_cursors()
+        
+        # Ховаємо стандартний курсор
+        pygame.mouse.set_visible(False)
+    
+    def _load_cursors(self):
+        """Завантажує файли курсорів"""
+        try:
+            # Завантажуємо звичайний курсор
+            original_normal = pygame.image.load("assets/sprites/ui/cursore1.png")
+            # Масштабуємо до 32x32
+            self.normal_cursor = pygame.transform.scale(original_normal, (32, 32))
+            print("Звичайний курсор завантажено: cursore1.png (32x32)")
+            
+            # Завантажуємо курсор натискання
+            original_clicked = pygame.image.load("assets/sprites/ui/cursore2.png")
+            # Масштабуємо до 32x32
+            self.clicked_cursor = pygame.transform.scale(original_clicked, (32, 32))
+            print("Курсор натискання завантажено: cursore2.png (32x32)")
+            
+            # Встановлюємо поточний курсор
+            self.current_cursor = self.normal_cursor
+            
+            # Розраховуємо зміщення для центрування курсора (тепер 16, 16 для 32x32)
+            self.cursor_offset_x = 16  # Половина від 32
+            self.cursor_offset_y = 16  # Половина від 32
+            
+        except pygame.error as e:
+            print(f"Помилка завантаження курсорів: {e}")
+            # Якщо не вдалося завантажити, повертаємо стандартний курсор
+            pygame.mouse.set_visible(True)
+    
+    def handle_mouse_event(self, event):
+        """Обробляє події миші для зміни стану курсора"""
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Ліва кнопка натиснута
+            self.is_clicking = True
+            if self.clicked_cursor:
+                self.current_cursor = self.clicked_cursor
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            # Ліва кнопка відпущена
+            self.is_clicking = False
+            if self.normal_cursor:
+                self.current_cursor = self.normal_cursor
+    
+    def draw(self, screen, mouse_pos):
+        """Малює кастомний курсор на екрані"""
+        if self.current_cursor is None:
+            return
+        
+        # Переконуємося, що стандартний курсор прихований
+        if pygame.mouse.get_visible():
+            pygame.mouse.set_visible(False)
+        
+        # Обчислюємо позицію курсора з урахуванням зміщення
+        cursor_x = mouse_pos[0] - self.cursor_offset_x
+        cursor_y = mouse_pos[1] - self.cursor_offset_y
+        
+        # Малюємо курсор
+        screen.blit(self.current_cursor, (cursor_x, cursor_y))
+    
+    def set_visible(self, visible):
+        """Встановлює видимість кастомного курсора"""
+        if visible:
+            pygame.mouse.set_visible(False)
+        else:
+            pygame.mouse.set_visible(True)
+    
+    def cleanup(self):
+        """Очищення ресурсів та відновлення стандартного курсора"""
+        pygame.mouse.set_visible(True)

@@ -17,7 +17,7 @@ class SoundManager:
         
         # Налаштування гучності
         self.sfx_volume = 0.7  # Гучність звукових ефектів (0.0 - 1.0)
-        self.music_volume = 0.5  # Гучність музики (0.0 - 1.0)
+        self.music_volume = 0.1  # Гучність музики (0.0 - 1.0)
         
         # Стан звуку
         self.sound_enabled = True
@@ -25,6 +25,9 @@ class SoundManager:
         
         # Завантажуємо звуки
         self.load_sounds()
+        
+        # Автоматично запускаємо фонову музику після завантаження
+        self.start_background_music()
     
     def load_sounds(self):
         """Завантажує всі звукові файли"""
@@ -74,14 +77,15 @@ class SoundManager:
             else:
                 print(f"Файл звуку не знайдено: {game_over_path}")
             
-            # Завантажуємо фонову музику
-            background_music_path = "assets/sounds/effects/sound_backend_floral.mp3"
+            # Завантажуємо основну фонову музику
+            background_music_path = "assets/sounds/music/back_musik.mp3"
             if os.path.exists(background_music_path):
                 self.background_music_path = background_music_path
-                print(f"Фонова музика знайдена: {background_music_path}")
+                print(f"Основна фонова музика знайдена: {background_music_path}")
             else:
-                print(f"Файл фонової музики не знайдено: {background_music_path}")
+                print(f"Файл основної фонової музики не знайдено: {background_music_path}")
                 self.background_music_path = None
+            
             
         except pygame.error as e:
             print(f"Помилка завантаження звуків: {e}")
@@ -133,7 +137,10 @@ class SoundManager:
     
     def start_background_music(self):
         """Запускає фонову музику"""
-        if self.music_enabled and self.music_volume > 0 and hasattr(self, 'background_music_path') and self.background_music_path:
+        if not self.music_enabled or self.music_volume == 0:
+            return
+        
+        if self.background_music_path:
             try:
                 pygame.mixer.music.load(self.background_music_path)
                 pygame.mixer.music.set_volume(self.music_volume)
@@ -141,6 +148,7 @@ class SoundManager:
                 print("Фонова музика запущена!")
             except pygame.error as e:
                 print(f"Помилка запуску фонової музики: {e}")
+        
     
     def stop_background_music(self):
         """Зупиняє фонову музику"""
@@ -162,6 +170,8 @@ class SoundManager:
     def set_sfx_volume(self, volume):
         """Встановлює гучність звукових ефектів (0.0 - 1.0)"""
         self.sfx_volume = max(0.0, min(1.0, volume))
+        
+        # Оновлюємо гучність звукових ефектів
         for sound in self.sounds.values():
             sound.set_volume(self.sfx_volume)
         
@@ -174,6 +184,8 @@ class SoundManager:
     def set_music_volume(self, volume):
         """Встановлює гучність музики (0.0 - 1.0)"""
         self.music_volume = max(0.0, min(1.0, volume))
+        
+        # Оновлюємо гучність основної музики
         pygame.mixer.music.set_volume(self.music_volume)
         
         # Автоматично вмикаємо/вимикаємо музику

@@ -185,9 +185,6 @@ def reset_game():
 # Показуємо заставку та меню
 menu_result = menu_system.main_menu_loop(records_manager, get_background_image(), game_save_manager)
 
-# Запускаємо фонову музику
-sound_manager.start_background_music()
-
 # Перевіряємо результат меню
 if menu_result == 'continue':
     # Завантажуємо збережену гру

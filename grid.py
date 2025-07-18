@@ -63,7 +63,9 @@ class Grid:
         self.score = 0
 
     def draw(self, surface, cell_size=GRID_CELL_SIZE):
-        """Малює ігрову сітку на екрані"""
+        """Малює ігрову сітку на екрані використовуючи спрайти"""
+        from constants import get_block_sprite
+        
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
         
@@ -77,12 +79,30 @@ class Grid:
                 )
                 
                 if self.cells[row][col] is None:
-                    color = EMPTY_CELL_COLOR  # Порожня клітинка
+                    # Порожня клітинка - малюємо звичайним кольором
+                    color = EMPTY_CELL_COLOR
+                    pygame.draw.rect(surface, color, rect)
+                    pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)  # Рамка
                 else:
-                    color = self.cells[row][col]  # Колір фігури
+                    # Заповнена клітинка - спробуємо використовувати спрайт
+                    color = self.cells[row][col]
+                    # Робимо спрайт трохи менший для кращого вигляду
+                    sprite_size = cell_size - 1  # Більший відступ для кращого вигляду
+                    sprite = get_block_sprite(color, sprite_size)
                     
-                pygame.draw.rect(surface, color, rect)
-                pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)  # Рамка
+                    if sprite:
+                        # Спочатку малюємо фон
+                        pygame.draw.rect(surface, EMPTY_CELL_COLOR, rect)
+                        # Центруємо спрайт у клітинці
+                        sprite_x = rect.x + (cell_size - sprite_size) // 2
+                        sprite_y = rect.y + (cell_size - sprite_size) // 2
+                        surface.blit(sprite, (sprite_x, sprite_y))
+                        # Малюємо рамку
+                        pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)
+                    else:
+                        # Fallback до кольорових прямокутників
+                        pygame.draw.rect(surface, color, rect)
+                        pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)  # Рамка
 
     def is_row_full(self, row):
         """Перевіряє, чи рядок заповнений"""

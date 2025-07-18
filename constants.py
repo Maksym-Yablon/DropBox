@@ -7,8 +7,8 @@ SCREEN_HEIGHT = 700
 
 # Розміри клітинок
 GRID_CELL_SIZE = 50  # Розмір клітинки сітки
-PIECE_CELL_SIZE = 48  # Розмір клітинки для фігур
-PIECE_CONTAINER_CELL_SIZE = 35  # Менший розмір для фігур у контейнері
+PIECE_CELL_SIZE = 50  # Розмір клітинки для фігур
+PIECE_CONTAINER_CELL_SIZE = 40  # Менший розмір для фігур у контейнері
 
 # Параметри сітки
 GRID_SIZE = 8  # Розмір сітки 8x8
@@ -145,6 +145,57 @@ PAUSE_BUTTON_Y = SCREEN_HEIGHT - PAUSE_BUTTON_SIZE - 20
 PAUSE_BUTTON_COLOR = (60, 60, 100, 180)  # Темний з прозорістю
 PAUSE_BUTTON_HOVER = (80, 80, 120, 200)
 PAUSE_BUTTON_BORDER = (120, 120, 160)
+
+# ===== СПРАЙТИ БЛОКІВ =====
+# Увімкнути/вимкнути використання спрайтів (True = спрайти, False = кольорові блоки)
+USE_SPRITES = True
+
+# Відповідність кольорів до файлів спрайтів
+COLOR_TO_SPRITE = {
+    PIECE_YELLOW: "assets/sprites/cats/white_block_cat.png",      # Жовтий -> білий кіт
+    PIECE_GREEN: "assets/sprites/cats/mind_block_cat.png",        # Зелений -> м'ятний кіт  
+    PIECE_RED: "assets/sprites/cats/red_block_cat.png",           # Червоний -> червоний кіт
+    PIECE_BLUE: "assets/sprites/cats/blue_block_cat.png",         # Синій -> синій кіт
+    PIECE_ORANGE: "assets/sprites/cats/orange_block_cat.png",     # Помаранчевий -> помаранчевий кіт
+    PIECE_PINK: "assets/sprites/cats/pink_block_cat.png",         # Рожевий -> рожевий кіт
+    PIECE_CYAN: "assets/sprites/cats/purple_block_cat.png",       # Блакитний -> фіолетовий кіт
+}
+
+# Кеш завантажених спрайтів
+_sprite_cache = {}
+
+def get_block_sprite(color, size):
+    """Повертає спрайт блоку для заданого кольору та розміру з якісним масштабуванням"""
+    # Якщо спрайти вимкнені, повертаємо None
+    if not USE_SPRITES:
+        return None
+        
+    if color not in COLOR_TO_SPRITE:
+        return None
+        
+    sprite_path = COLOR_TO_SPRITE[color]
+    cache_key = (sprite_path, size)
+    
+    if cache_key not in _sprite_cache:
+        try:
+            # Завантажуємо оригінальний спрайт (2048x2048)
+            original_sprite = pygame.image.load(sprite_path)
+            
+            # Використовуємо smoothscale для якісного масштабування великих зображень
+            # Це краще ніж звичайний scale для високорозширених зображень
+            if size > 0:
+                scaled_sprite = pygame.transform.smoothscale(original_sprite, (size, size))
+            else:
+                scaled_sprite = original_sprite
+                
+            _sprite_cache[cache_key] = scaled_sprite
+            
+        except pygame.error as e:
+            # Якщо не вдалося завантажити спрайт, повертаємо None
+            print(f"Помилка завантаження спрайту {sprite_path}: {e}")
+            return None
+    
+    return _sprite_cache[cache_key]
 
 # ===== ФУНКЦІЇ =====
 def get_background_image():

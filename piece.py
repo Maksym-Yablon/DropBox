@@ -62,7 +62,16 @@ class Piece:
         return True
 
     def draw(self, surface, start_x, start_y, cell_size=GRID_CELL_SIZE, alpha=255):
-        """Малює фігуру на екрані з покращеним візуалом та підтримкою прозорості"""
+        """Малює фігуру на екрані використовуючи спрайти або кольори"""
+        from constants import get_block_sprite
+        
+        # Розрахунок розміру спрайту з кращими відступами
+        sprite_margin = max(2, PIECE_MARGIN )  # Більший відступ для спрайтів
+        sprite_size = cell_size - sprite_margin
+
+        # Отримуємо спрайт для цього кольору
+        sprite = get_block_sprite(self.color, sprite_size)
+        
         # Оптимізація: створюємо поверхню тільки один раз для всієї фігури з прозорістю
         if alpha < 255:
             # Розраховуємо загальний розмір фігури
@@ -74,35 +83,53 @@ class Piece:
                 for row in range(len(self.shape)): # type: ignore
                     for col in range(len(self.shape[row])):
                         if self.shape[row][col] == 1:
-                            margin = PIECE_MARGIN
-                            rect = pygame.Rect(
-                                col * cell_size + margin,
-                                row * cell_size + margin,
-                                cell_size - 2 * margin, 
-                                cell_size - 2 * margin
-                            )
+                            # Центруємо спрайт у клітинці
+                            block_x = col * cell_size + (cell_size - sprite_size) // 2
+                            block_y = row * cell_size + (cell_size - sprite_size) // 2
                             
-                            color_with_alpha = (*self.color, alpha)
-                            pygame.draw.rect(figure_surface, color_with_alpha, rect)
-                            
-                            outline_with_alpha = (*PIECE_OUTLINE_COLOR, alpha)
-                            pygame.draw.rect(figure_surface, outline_with_alpha, rect, 1)
+                            if sprite:
+                                # Використовуємо спрайт з прозорістю
+                                sprite_with_alpha = sprite.copy()
+                                sprite_with_alpha.set_alpha(alpha)
+                                figure_surface.blit(sprite_with_alpha, (block_x, block_y))
+                            else:
+                                # Fallback до кольорових прямокутників
+                                margin = PIECE_MARGIN
+                                rect = pygame.Rect(
+                                    col * cell_size + margin,
+                                    row * cell_size + margin,
+                                    cell_size - 2 * margin, 
+                                    cell_size - 2 * margin
+                                )
+                                color_with_alpha = (*self.color, alpha)
+                                pygame.draw.rect(figure_surface, color_with_alpha, rect)
+                                outline_with_alpha = (*PIECE_OUTLINE_COLOR, alpha)
+                                pygame.draw.rect(figure_surface, outline_with_alpha, rect, 1)
                 
                 surface.blit(figure_surface, (start_x, start_y))
         else:
-            # Звичайне малювання без прозорості (без зміни)
+            # Звичайне малювання без прозорості
             for row in range(len(self.shape)):
                 for col in range(len(self.shape[row])):
                     if self.shape[row][col] == 1:
-                        margin = PIECE_MARGIN
-                        rect = pygame.Rect(
-                            start_x + col * cell_size + margin,
-                            start_y + row * cell_size + margin,
-                            cell_size - 2 * margin, 
-                            cell_size - 2 * margin
-                        )
-                        pygame.draw.rect(surface, self.color, rect)
-                        pygame.draw.rect(surface, PIECE_OUTLINE_COLOR, rect, 1)
+                        # Центруємо спрайт у клітинці
+                        block_x = start_x + col * cell_size + (cell_size - sprite_size) // 2
+                        block_y = start_y + row * cell_size + (cell_size - sprite_size) // 2
+                        
+                        if sprite:
+                            # Використовуємо спрайт
+                            surface.blit(sprite, (block_x, block_y))
+                        else:
+                            # Fallback до кольорових прямокутників
+                            margin = PIECE_MARGIN
+                            rect = pygame.Rect(
+                                start_x + col * cell_size + margin,
+                                start_y + row * cell_size + margin,
+                                cell_size - 2 * margin, 
+                                cell_size - 2 * margin
+                            )
+                            pygame.draw.rect(surface, self.color, rect)
+                            pygame.draw.rect(surface, PIECE_OUTLINE_COLOR, rect, 1)
 
 
 class SingleBlock(Piece):

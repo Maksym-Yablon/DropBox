@@ -39,6 +39,7 @@ drag_offset_x = 0  # Зміщення кліку по X відносно фіг�
 drag_offset_y = 0  # Зміщення кліку по Y відносно фігури
 drag_block_col = 0  # Колонка блоку в фігурі, за яку взялися
 drag_block_row = 0  # Рядок блоку в фігурі, за яку взялися
+waiting_for_rotate_click = False  # Режим вибору фігури для обертання
 
 # Кешовані значення для оптимізації
 CACHED_GRID_HEIGHT = GRID_SIZE * GRID_CELL_SIZE
@@ -158,7 +159,7 @@ def check_game_over():
 
 def reset_game():
     """Скидає гру до початкового стану"""
-    global grid, piece_box, dragging, dragged_piece, dragged_piece_index, drag_offset_x, drag_offset_y, drag_block_col, drag_block_row, game_over_check_counter
+    global grid, piece_box, dragging, dragged_piece, dragged_piece_index, drag_offset_x, drag_offset_y, drag_block_col, drag_block_row, game_over_check_counter, waiting_for_rotate_click
     
     # Відтворюємо звук нової гри
     sound_manager.play_new_game_sound()
@@ -181,6 +182,7 @@ def reset_game():
     drag_block_col = 0
     drag_block_row = 0
     game_over_check_counter = 0
+    waiting_for_rotate_click = False
 
 # Показуємо заставку та меню
 menu_result = menu_system.main_menu_loop(records_manager, get_background_image(), game_save_manager)
@@ -274,20 +276,40 @@ while running:
             
             # Перевіряємо клік по магазину (якщо гра не на паузі)
             if not pause_menu.is_paused:
-                shop_item_index = shop.handle_mouse_event(mouse_pos)
-                if shop_item_index is not None:
-                    # Спроба купити товар
-                    purchased_item = shop.buy_selected()
-                    if purchased_item:
-                        # Тут можна додати логіку застосування купленого товару
-                        if purchased_item.name == "Тест товар":
-                            print("Тестовий товар куплено успішно!")
-                        elif purchased_item.name == "Підказка":
-                            print("Підказка куплена! (функція ще не реалізована)")
+                shop_result = shop.handle_click(mouse_pos[0], mouse_pos[1], cash_manager, piece_box)
+                if shop_result:
+                    if shop_result == "rotate_purchased":
+                        print("Куплено: Обернути фігуру! Клікніть на фігуру для обертання.")
+                        # Активуємо режим вибору фігури для обертання
+                        waiting_for_rotate_click = True
+                    elif shop_result == "clear_cells_purchased":
+                        # Виконуємо очищення комірок відразу
+                        cleared_count = grid.clear_random_cells(5)
+                        print(f"Куплено: Очистити 5 комірок! Очищено {cleared_count} комірок.")
+                        # Відтворюємо спеціальний звук очищення
+                        sound_manager.play_clear_cells_sound()
+                    elif shop_result == "insufficient_funds":
+                        print("Недостатньо коштів!")
                     continue  # Пропускаємо обробку перетягування фігур
             
             # Почати перетягування фігур (тільки якщо гра не на паузі)
             if not pause_menu.is_paused:
+                # Якщо чекаємо на клік для обертання
+                if waiting_for_rotate_click:
+                    piece_index, _, _ = piece_box.get_piece_at_mouse(mouse_pos[0], mouse_pos[1])
+                    if piece_index is not None:
+                        # Повертаємо фігуру
+                        if piece_box.rotate_piece(piece_index):
+                            print("Фігуру повернуто!")
+                            # Відтворюємо звук обертання
+                            sound_manager.play_rotate_sound()
+                        waiting_for_rotate_click = False
+                        continue  # Не починаємо перетягування
+                    else:
+                        # Клікнули не на фігуру - скасовуємо режим обертання
+                        waiting_for_rotate_click = False
+                        print("Обертання скасовано")
+                
                 clicked_piece_index, offset_x, offset_y = get_piece_at_mouse(mouse_pos)
             if clicked_piece_index is not None:
                 # Також визначаємо, за який блок фігури взялися
@@ -397,6 +419,20 @@ while running:
         
         # Малюємо фігури в коробці (крім тої, що перетягується)
         piece_box.draw(screen)
+
+        # Візуальний індикатор режиму обертання
+        if waiting_for_rotate_click:
+            # Додаємо підсвічування контейнера фігур
+            pygame.draw.rect(screen, (255, 255, 0), 
+                           (piece_box.start_x - 5, piece_box.start_y - 5, 
+                            piece_box.width + 10, piece_box.height + 10), 3)
+            
+            # Показуємо текст підказки
+            font = pygame.font.Font(None, 32)
+            hint_text = font.render("Оберіть фігуру для обертання", True, (255, 255, 0))
+            text_x = piece_box.start_x + (piece_box.width - hint_text.get_width()) // 2
+            text_y = piece_box.start_y - 40
+            screen.blit(hint_text, (text_x, text_y))
 
         # Якщо перетягуємо фігуру - малюємо її під мишею з урахуванням зміщення кліку
         if dragging and dragged_piece:

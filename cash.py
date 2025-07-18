@@ -27,6 +27,10 @@ class CashManager:
             return True
         return False
 
+    def spend(self, amount):
+        """Псевдонім для spend_catcoins для сумісності з магазином"""
+        return self.spend_catcoins(amount)
+
     def get_balance(self):
         """Повертає поточний баланс catcoin."""
         return self.catcoins

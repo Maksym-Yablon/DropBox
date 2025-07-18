@@ -284,6 +284,33 @@ class Grid:
             print(f"Рядок {row}: {row_str}")
         print()
     
+    def clear_random_cells(self, count=5):
+        """Випадково очищає вказану кількість заповнених комірок"""
+        # Знаходимо всі заповнені комірки
+        filled_cells = []
+        for row in range(self.size):
+            for col in range(self.size):
+                if self.cells[row][col] is not None:
+                    filled_cells.append((row, col))
+        
+        # Якщо немає заповнених комірок
+        if not filled_cells:
+            print("Немає заповнених комірок для очищення!")
+            return 0
+        
+        # Визначаємо кількість комірок для очищення
+        actual_count = min(count, len(filled_cells))
+        
+        # Випадково вибираємо комірки для очищення
+        cells_to_clear = random.sample(filled_cells, actual_count)
+        
+        # Очищаємо вибрані комірки
+        for row, col in cells_to_clear:
+            self.cells[row][col] = None
+        
+        print(f"Очищено {actual_count} комірок із сітки!")
+        return actual_count
+    
     def test_clearing_logic(self):
         """Тестує логіку очищення ліній"""
         print("=== ТЕСТ ЛОГІКИ ОЧИЩЕННЯ ===")

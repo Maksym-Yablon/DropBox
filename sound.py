@@ -134,6 +134,24 @@ class SoundManager:
                 print("Відтворюється звук гейм овер!")
             except pygame.error as e:
                 print(f"Помилка відтворення звуку гейм овер: {e}")
+
+    def play_rotate_sound(self):
+        """Відтворює звук обертання фігури (використовує звук pick)"""
+        if self.sound_enabled and self.sfx_volume > 0 and 'pick' in self.sounds:
+            try:
+                self.sounds['pick'].play()
+                print("Відтворюється звук обертання!")
+            except pygame.error as e:
+                print(f"Помилка відтворення звуку обертання: {e}")
+
+    def play_clear_cells_sound(self):
+        """Відтворює звук очищення комірок (використовує звук комбо)"""
+        if self.sound_enabled and self.sfx_volume > 0 and 'combo' in self.sounds:
+            try:
+                self.sounds['combo'].play()
+                print("Відтворюється звук очищення комірок!")
+            except pygame.error as e:
+                print(f"Помилка відтворення звуку очищення комірок: {e}")
     
     def start_background_music(self):
         """Запускає фонову музику"""

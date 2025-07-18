@@ -22,8 +22,8 @@ class Shop:
     def create_items(self):
         # Список товарів магазину (можна розширювати)
         return [
-            ShopItem("Підказка", 5, "Показує найкращий хід"),
-            ShopItem("Тест товар", 1, "Тестовий предмет для перевірки")
+            ShopItem("Обернути фігуру", 3, "Повертає обрану фігуру на 90°"),
+            ShopItem("Очистити 5 комірок", 5, "Випадково очищає 5 комірок сітки")
         ]
 
     def draw(self, surface):
@@ -90,4 +90,32 @@ class Shop:
                 return item  # Покупка успішна
             else:
                 print(f"Недостатньо коштів! Потрібно {item.price} catcoin, а у вас {cash_manager.get_balance()}")
+        return None
+
+    def handle_click(self, mouse_x, mouse_y, cash_manager, piece_box=None):
+        """Обробляє клік по товару та покупку"""
+        y_offset = self.y + 100
+        for idx, item in enumerate(self.items):
+            # Створюємо область кліку по центру для кожного товару
+            item_text = self.font.render(f"{item.name} - {item.price} cc", True, (255, 255, 255))
+            item_rect = item_text.get_rect(center=(self.x + self.width // 2, y_offset))
+            
+            if item_rect.collidepoint((mouse_x, mouse_y)):
+                # Спробувати купити товар
+                if cash_manager.get_balance() >= item.price:
+                    # Обробляємо різні типи товарів
+                    if item.name == "Обернути фігуру":
+                        # Для обертання потрібен piece_box
+                        if piece_box is None:
+                            print("Помилка: не передано piece_box для обертання")
+                            return "error"
+                        cash_manager.spend(item.price)
+                        return "rotate_purchased"
+                    elif item.name == "Очистити 5 комірок":
+                        cash_manager.spend(item.price)
+                        return "clear_cells_purchased"
+                else:
+                    return "insufficient_funds"
+            y_offset += 40
+        
         return None

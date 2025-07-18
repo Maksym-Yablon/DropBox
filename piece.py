@@ -14,6 +14,8 @@ class Piece:
         self.y = 0
         # Кешуємо розміри фігури для оптимізації
         self._cached_dimensions = None
+        # Додаємо можливість обертання
+        self.rotation_angle = 0  # 0, 90, 180, 270 градусів
 
     def get_dimensions(self, cell_size):
         """Отримує розміри фігури з кешуванням"""
@@ -25,6 +27,39 @@ class Piece:
             self._cached_dimensions = (cell_size, width, height)
             return width, height
         return self._cached_dimensions[1], self._cached_dimensions[2]
+
+    def rotate_90_clockwise(self):
+        """Повертає фігуру на 90 градусів за годинниковою стрілкою"""
+        if not self.shape:
+            return
+        
+        rows = len(self.shape)
+        cols = len(self.shape[0])
+        
+        # Створюємо нову матрицю повернену на 90 градусів
+        rotated = [[0 for _ in range(rows)] for _ in range(cols)]
+        
+        for i in range(rows):
+            for j in range(cols):
+                rotated[j][rows - 1 - i] = self.shape[i][j]
+        
+        self.shape = rotated
+        self.rotation_angle = (self.rotation_angle + 90) % 360
+        # Очищаємо кеш розмірів після обертання
+        self._cached_dimensions = None
+
+    def rotate_90_counterclockwise(self):
+        """Повертає фігуру на 90 градусів проти годинникової стрілки"""
+        # Поворот на 90 градусів проти годинникової = 3 повороти за годинниковою
+        for _ in range(3):
+            self.rotate_90_clockwise()
+
+    def can_rotate(self):
+        """Перевіряє, чи можна повернути фігуру (деякі фігури симетричні)"""
+        # Квадрати та одиночні блоки не потрібно повертати
+        if isinstance(self, (SingleBlock, Square, Square3x3)):
+            return False
+        return True
 
     def draw(self, surface, start_x, start_y, cell_size=GRID_CELL_SIZE, alpha=255):
         """Малює фігуру на екрані з покращеним візуалом та підтримкою прозорості"""
@@ -464,6 +499,17 @@ class PieceBox:
             self.next_piece = generate_weighted_random_piece()
             # Перераховуємо позиції після заміни фігури
             self._calculate_piece_positions()
+
+    def rotate_piece(self, piece_index):
+        """Повертає фігуру в контейнері на 90 градусів за годинниковою стрілкою"""
+        if 0 <= piece_index < len(self.pieces):
+            piece = self.pieces[piece_index]
+            if piece.can_rotate():
+                piece.rotate_90_clockwise()
+                # Перераховуємо позиції після обертання
+                self._calculate_piece_positions()
+                return True
+        return False
 
     def draw(self, surface):
         """Малює всі фігури в коробці з правильним вирівнюванням наступної фігури"""

@@ -23,6 +23,10 @@ class SoundManager:
         self.sound_enabled = True
         self.music_enabled = True
         
+        # Оптимізація: кешування і обмеження частоти звуків
+        self._sound_cooldowns = {}  # Час останнього відтворення для кожного звуку
+        self._min_sound_interval = 0.1  # Мінімальний інтервал між однаковими звуками (100ms)
+        
         # Завантажуємо звуки
         self.load_sounds()
         
@@ -90,9 +94,25 @@ class SoundManager:
         except pygame.error as e:
             print(f"Помилка завантаження звуків: {e}")
     
+    def _can_play_sound(self, sound_name):
+        """Перевіряє, чи можна відтворити звук (обмеження частоти)"""
+        import time
+        current_time = time.time()
+        
+        if sound_name in self._sound_cooldowns:
+            if current_time - self._sound_cooldowns[sound_name] < self._min_sound_interval:
+                return False
+        
+        self._sound_cooldowns[sound_name] = current_time
+        return True
+    
     def play_combo_sound(self, combo_level=2):
         """Відтворює звук комбо залежно від рівня"""
         if not self.sound_enabled or self.sfx_volume == 0:
+            return
+        
+        sound_name = 'combo' if combo_level == 2 else 'combo2'
+        if not self._can_play_sound(sound_name):
             return
             
         if combo_level == 2 and 'combo' in self.sounds:
@@ -110,7 +130,8 @@ class SoundManager:
     
     def play_new_game_sound(self):
         """Відтворює звук нової гри"""
-        if self.sound_enabled and self.sfx_volume > 0 and 'new_game' in self.sounds:
+        if (self.sound_enabled and self.sfx_volume > 0 and 'new_game' in self.sounds and 
+            self._can_play_sound('new_game')):
             try:
                 self.sounds['new_game'].play()
                 print("Відтворюється звук нової гри!")
@@ -119,7 +140,8 @@ class SoundManager:
     
     def play_pick_sound(self):
         """Відтворює звук розміщення фігури"""
-        if self.sound_enabled and self.sfx_volume > 0 and 'pick' in self.sounds:
+        if (self.sound_enabled and self.sfx_volume > 0 and 'pick' in self.sounds and 
+            self._can_play_sound('pick')):
             try:
                 self.sounds['pick'].play()
                 print("Відтворюється звук розміщення фігури!")
@@ -128,7 +150,8 @@ class SoundManager:
     
     def play_game_over_sound(self):
         """Відтворює звук гейм овер"""
-        if self.sound_enabled and self.sfx_volume > 0 and 'game_over' in self.sounds:
+        if (self.sound_enabled and self.sfx_volume > 0 and 'game_over' in self.sounds and 
+            self._can_play_sound('game_over')):
             try:
                 self.sounds['game_over'].play()
                 print("Відтворюється звук гейм овер!")
@@ -137,7 +160,8 @@ class SoundManager:
 
     def play_rotate_sound(self):
         """Відтворює звук обертання фігури (використовує звук pick)"""
-        if self.sound_enabled and self.sfx_volume > 0 and 'pick' in self.sounds:
+        if (self.sound_enabled and self.sfx_volume > 0 and 'pick' in self.sounds and 
+            self._can_play_sound('rotate')):
             try:
                 self.sounds['pick'].play()
                 print("Відтворюється звук обертання!")

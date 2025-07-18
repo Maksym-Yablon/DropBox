@@ -33,60 +33,77 @@ BUTTON_WIDTH_SMALL = 150
 BUTTON_HEIGHT = 60
 
 # ===== КОЛЬОРИ БЛОКІВ ФІГУР =====
-# Основні кольори фігур
-PIECE_YELLOW = (255, 255, 0)
-PIECE_GREEN = (0, 255, 0)
-PIECE_RED = (255, 0, 0)
-PIECE_BLUE = (0, 0, 255)
-PIECE_ORANGE = (255, 165, 0)
-PIECE_PINK = (255, 192, 203)
-PIECE_CYAN = (0, 255, 255)
+# М'які кольори фігур для темної теми (приглушені, без різкості)
+PIECE_YELLOW = (218, 195, 120)    # М'який золотистий
+PIECE_GREEN = (144, 184, 144)     # М'який зелений
+PIECE_RED = (192, 120, 120)       # М'який червоний
+PIECE_BLUE = (120, 150, 192)      # М'який синій
+PIECE_ORANGE = (210, 160, 120)    # М'який помаранчевий
+PIECE_PINK = (192, 144, 168)      # М'який рожевий
+PIECE_CYAN = (120, 180, 180)      # М'який бірюзовий
 
 # Контури блоків
-PIECE_OUTLINE_COLOR = (128, 128, 128)
+PIECE_OUTLINE_COLOR = (80, 80, 80)  # Темно-сірий контур
 
 # ===== КОЛЬОРИ СІТКИ =====
-# Нова красива сітка як на картинці
-GRID_BACKGROUND_COLOR = (250, 240, 220)  # Світло-бежевий фон сітки
-GRID_LINE_COLOR = (218, 165, 32)         # Золотистий колір ліній (goldenrod)
-EMPTY_CELL_COLOR = (248, 248, 248)       # Майже білий для порожніх клітинок
-GRID_BORDER_COLOR = (184, 134, 11)       # Темніший золотистий для рамки
+# Темна сітка з м'якими золотистими акцентами
+GRID_BACKGROUND_COLOR = (45, 50, 55)       # Темний сіро-синій фон сітки
+GRID_LINE_COLOR = (120, 100, 70)           # Приглушений золотистий для ліній
+EMPTY_CELL_COLOR = (40, 45, 50)            # Темний для порожніх клітинок
+GRID_BORDER_COLOR = (90, 75, 50)           # Темніший золотистий для рамки
 
 # ===== КОЛЬОРИ ІНТЕРФЕЙСУ =====
-# Базові кольори
-BACKGROUND_COLOR = (240, 235, 225)  # Світлий бежевий фон, що підходить до нової сітки
-TEXT_COLOR = (60, 60, 60)           # Темно-сірий текст для кращої читабельності
-TEXT_COLOR_BLACK = (0, 0, 0)
+# М'яка темна тема
+BACKGROUND_COLOR = (28, 32, 36)        # Темний сіро-синій фон
+TEXT_COLOR = (220, 220, 215)           # М'який світлий текст
 
 # Кольори кнопок
-BUTTON_COLOR = (64, 128, 192)
-BUTTON_HOVER_COLOR = (96, 160, 224)
+BUTTON_COLOR = (55, 65, 75)            # Темно-сірий
+BUTTON_HOVER_COLOR = (75, 85, 95)      # Світліше при наведенні
 
 # Кольори контейнера для фігур
-PIECE_BOX_BORDER_COLOR = (139, 69, 19)  # Коричневий як у сітки
-PIECE_BOX_FILL_COLOR = (205, 133, 63)   # Світло-коричневий
+PIECE_BOX_BORDER_COLOR = (70, 60, 45)  # Темний коричневий
+PIECE_BOX_FILL_COLOR = (50, 55, 60)    # Темно-сірий фон
+
+# ===== КОЛЬОРИ КОНКРЕТНИХ UI ЕЛЕМЕНТІВ =====
+# Магазин
+UI_SHOP_TITLE_COLOR = (220, 220, 215)      # Заголовок магазину
+UI_SHOP_BALANCE_COLOR = (200, 170, 100)    # Баланс catcoin (приглушене золото)
+UI_SHOP_ITEM_AVAILABLE_COLOR = (200, 200, 195)  # Доступний товар
+UI_SHOP_ITEM_SELECTED_COLOR = (120, 180, 120)   # Вибраний товар
+UI_SHOP_ITEM_UNAVAILABLE_COLOR = (140, 140, 135) # Недоступний товар
+UI_SHOP_BACKGROUND_COLOR = (60, 70, 80, 60)      # Фон магазину з прозорістю
+UI_SHOP_BORDER_COLOR = (90, 100, 110)            # Контур магазину
+
+# Підказки та повідомлення
+UI_HINT_COLOR = (160, 160, 155)            # Звичайні підказки
+UI_ROTATION_HINT_COLOR = (255, 255, 0)     # Підказка про обертання (жовта)
+UI_ROTATION_HIGHLIGHT_COLOR = (255, 255, 0) # Підсвічування при обертанні
+
+# HUD (очки, рекорди)
+UI_HUD_SCORE_COLOR = TEXT_COLOR             # Колір очок
+UI_HUD_RECORD_COLOR = TEXT_COLOR            # Колір рекорду
 
 # ===== КОЛЬОРИ ЕФЕКТІВ =====
-# Кольори попереднього перегляду (зелені відтінки)
-PREVIEW_VALID_COLOR = (0, 255, 0, 80)      # Зелений з прозорістю
-PREVIEW_INVALID_COLOR = (255, 0, 0, 80)    # Червоний з прозорістю
+# М'які кольори попереднього перегляду
+PREVIEW_VALID_COLOR = (120, 180, 120, 100)    # М'який зелений з прозорістю
+PREVIEW_INVALID_COLOR = (180, 100, 100, 100)  # М'який червоний з прозорістю
 
 # Кольори для очищення ліній
-CLEAR_EFFECT_COLOR = (255, 255, 255, 200)  # Білий з прозорістю
+CLEAR_EFFECT_COLOR = (200, 200, 200, 150)     # М'який білий з прозорістю
 
 # ===== КОЛЬОРИ МЕНЮ ТА РЕКОРДІВ =====
-# Медалі в таблиці рекордів
-MEDAL_GOLD = (255, 215, 0)     # Золото
-MEDAL_SILVER = (192, 192, 192) # Срібло  
-MEDAL_BRONZE = (205, 127, 50)  # Бронза
+# М'які медалі в таблиці рекордів
+MEDAL_GOLD = (200, 170, 100)       # Приглушене золото
+MEDAL_SILVER = (150, 150, 150)     # Приглушене срібло  
+MEDAL_BRONZE = (160, 120, 90)      # Приглушена бронза
 
 # Кольори тексту в меню
-MENU_TEXT_COLOR = (255, 255, 255)
-MENU_TITLE_COLOR = (255, 255, 255)
+MENU_TEXT_COLOR = (220, 220, 215)  # М'який світлий текст
+MENU_TITLE_COLOR = (240, 235, 230) # Трохи світліший для заголовків
 
-# ===== ЗАСТАРІЛІ КОЛЬОРИ (для сумісності) =====
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
+# ===== БАЗОВІ КОЛЬОРИ =====
+WHITE = (255, 255, 255)  # Використовується в UI
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
@@ -95,10 +112,28 @@ KARATOVY = (255, 120, 18)
 CARROT = (255, 160, 48)
 
 # ===== ШРИФТИ =====
+# Базові розміри шрифтів
 FONT_SIZE = 36
 FONT_SIZE_LARGE = 48
 FONT_SIZE_MEDIUM = 32
 FONT_SIZE_SMALL = 24
+
+# Спеціальні шрифти для різних елементів UI
+UI_FONT_PAUSE_BUTTON = 24           # Шрифт кнопки паузи
+UI_FONT_PAUSE_TITLE = 48            # Заголовок меню паузи
+UI_FONT_PAUSE_BUTTONS = 24          # Кнопки в меню паузи
+UI_FONT_CONTROL_PANEL = 20          # Панель керування
+UI_FONT_SHOP_TITLE = 28             # Заголовок магазину
+UI_FONT_SHOP_ITEMS = 28             # Товари в магазині
+UI_FONT_ROTATION_HINT = 32          # Підказка про обертання
+UI_FONT_HUD_SCORE = int(FONT_SIZE * 0.9)    # Шрифт очок (32)
+UI_FONT_HUD_RECORD = int(FONT_SIZE_SMALL * 0.8)  # Шрифт рекорду (19)
+UI_FONT_HINTS = 18                  # Підказки
+
+# Налаштування шрифтів (ім'я та стиль)
+UI_FONT_FAMILY_DEFAULT = None       # None = системний шрифт Pygame
+UI_FONT_FAMILY_ARIAL = "Arial"      # Arial для HUD
+UI_USE_BOLD_FONTS = True            # Використовувати жирні шрифти
 
 # ===== ШАНСИ ПОЯВИ ФІГУР (0-100%) =====
 # Налаштування шансів появи кожної фігури від 0% до 100%
@@ -132,42 +167,64 @@ CONTROL_BUTTON_WIDTH = 150
 CONTROL_BUTTON_HEIGHT = 40
 CONTROL_BUTTON_MARGIN = 15
 
-# Кольори панелі керування
-CONTROL_PANEL_BG = (45, 45, 75, 180)    # Темно-синій з прозорістю
-CONTROL_PANEL_BORDER = (100, 100, 150)   # Світло-синій для рамки
-CONTROL_BUTTON_COLOR = (70, 130, 180)    # Сталево-синій
-CONTROL_BUTTON_HOVER = (100, 149, 237)   # Корнфлавер синій
-CONTROL_BUTTON_TEXT = (255, 255, 255)    # Білий текст
+# Кольори панелі керування для темної теми
+CONTROL_PANEL_BG = (35, 40, 45, 200)     # Темний сіро-синій з прозорістю
+CONTROL_PANEL_BORDER = (70, 80, 90)      # М'який сірий для рамки
+CONTROL_BUTTON_COLOR = (55, 65, 75)      # М'який темно-сірий
+CONTROL_BUTTON_HOVER = (75, 85, 95)      # Світліше при наведенні
+CONTROL_BUTTON_TEXT = (220, 220, 215)    # М'який світлий текст
 
 # ===== КНОПКА ПАУЗИ =====
-# Кнопка паузи в нижньому лівому куті
+# М'яка кнопка паузи для темної теми
 PAUSE_BUTTON_SIZE = 50
 PAUSE_BUTTON_X = 20
 PAUSE_BUTTON_Y = SCREEN_HEIGHT - PAUSE_BUTTON_SIZE - 20
-PAUSE_BUTTON_COLOR = (60, 60, 100, 180)  # Темний з прозорістю
-PAUSE_BUTTON_HOVER = (80, 80, 120, 200)
-PAUSE_BUTTON_BORDER = (120, 120, 160)
+PAUSE_BUTTON_COLOR = (50, 55, 65, 200)   # М'який темно-сірий з прозорістю
+PAUSE_BUTTON_HOVER = (70, 75, 85, 220)   # Світліше при наведенні
+PAUSE_BUTTON_BORDER = (90, 95, 105)      # М'який сірий контур
+
+# ===== ШЛЯХИ ДО ЗОБРАЖЕНЬ =====
+# Іконки та фонові зображення
+UI_ICON_PATH = "image/icon.png"             # Іконка гри
+UI_BACKGROUND_IMAGE_PATH = "image/icon.png" # Фонове зображення (поки використовуємо іконку)
+
+# Спрайти котиків
+SPRITE_PATH_WHITE = "assets/sprites/cats/white_block_cat.png"
+SPRITE_PATH_MINT = "assets/sprites/cats/mind_block_cat.png"
+SPRITE_PATH_RED = "assets/sprites/cats/red_block_cat.png"
+SPRITE_PATH_BLUE = "assets/sprites/cats/blue_block_cat.png"
+SPRITE_PATH_ORANGE = "assets/sprites/cats/orange_block_cat.png"
+SPRITE_PATH_PINK = "assets/sprites/cats/pink_block_cat.png"
+SPRITE_PATH_PURPLE = "assets/sprites/cats/purple_block_cat.png"
+SPRITE_PATH_YELLOW = "assets/sprites/cats/yelow_block_cat.png"
+
+# Налаштування спрайтів
+SPRITE_ORIGINAL_SIZE = 2048         # Оригінальний розмір спрайтів
+SPRITE_USE_SMOOTH_SCALING = False   # False = швидше, True = краща якість
+SPRITE_CACHE_SIZE = 50              # Максимум спрайтів у кеші
 
 # ===== СПРАЙТИ БЛОКІВ =====
 # Увімкнути/вимкнути використання спрайтів (True = спрайти, False = кольорові блоки)
 USE_SPRITES = True
 
-# Відповідність кольорів до файлів спрайтів
+# Відповідність кольорів до файлів спрайтів (використовуємо нові константи)
 COLOR_TO_SPRITE = {
-    PIECE_YELLOW: "assets/sprites/cats/white_block_cat.png",      # Жовтий -> білий кіт
-    PIECE_GREEN: "assets/sprites/cats/mind_block_cat.png",        # Зелений -> м'ятний кіт  
-    PIECE_RED: "assets/sprites/cats/red_block_cat.png",           # Червоний -> червоний кіт
-    PIECE_BLUE: "assets/sprites/cats/blue_block_cat.png",         # Синій -> синій кіт
-    PIECE_ORANGE: "assets/sprites/cats/orange_block_cat.png",     # Помаранчевий -> помаранчевий кіт
-    PIECE_PINK: "assets/sprites/cats/pink_block_cat.png",         # Рожевий -> рожевий кіт
-    PIECE_CYAN: "assets/sprites/cats/purple_block_cat.png",       # Блакитний -> фіолетовий кіт
+    PIECE_YELLOW: SPRITE_PATH_WHITE,      # Жовтий -> білий кіт
+    PIECE_GREEN: SPRITE_PATH_MINT,        # Зелений -> м'ятний кіт  
+    PIECE_RED: SPRITE_PATH_RED,           # Червоний -> червоний кіт
+    PIECE_BLUE: SPRITE_PATH_BLUE,         # Синій -> синій кіт
+    PIECE_ORANGE: SPRITE_PATH_ORANGE,     # Помаранчевий -> помаранчевий кіт
+    PIECE_PINK: SPRITE_PATH_PINK,         # Рожевий -> рожевий кіт
+    PIECE_CYAN: SPRITE_PATH_PURPLE,       # Блакитний -> фіолетовий кіт
 }
 
-# Кеш завантажених спрайтів
+# Кеш завантажених спрайтів з обмеженням розміру (використовуємо нові константи)
 _sprite_cache = {}
+_max_cache_size = SPRITE_CACHE_SIZE  # Використовуємо константу замість магічного числа
+_original_sprites = {}  # Кеш оригінальних спрайтів
 
 def get_block_sprite(color, size):
-    """Повертає спрайт блоку для заданого кольору та розміру з якісним масштабуванням"""
+    """Оптимізована версія з контролем пам'яті"""
     # Якщо спрайти вимкнені, повертаємо None
     if not USE_SPRITES:
         return None
@@ -178,31 +235,41 @@ def get_block_sprite(color, size):
     sprite_path = COLOR_TO_SPRITE[color]
     cache_key = (sprite_path, size)
     
-    if cache_key not in _sprite_cache:
-        try:
-            # Завантажуємо оригінальний спрайт (2048x2048)
-            original_sprite = pygame.image.load(sprite_path)
-            
-            # Використовуємо smoothscale для якісного масштабування великих зображень
-            # Це краще ніж звичайний scale для високорозширених зображень
-            if size > 0:
-                scaled_sprite = pygame.transform.smoothscale(original_sprite, (size, size))
-            else:
-                scaled_sprite = original_sprite
-                
-            _sprite_cache[cache_key] = scaled_sprite
-            
-        except pygame.error as e:
-            # Якщо не вдалося завантажити спрайт, повертаємо None
-            print(f"Помилка завантаження спрайту {sprite_path}: {e}")
-            return None
+    # Перевіряємо кеш масштабованих спрайтів
+    if cache_key in _sprite_cache:
+        return _sprite_cache[cache_key]
     
-    return _sprite_cache[cache_key]
+    try:
+        # Завантажуємо оригінальний спрайт лише один раз
+        if sprite_path not in _original_sprites:
+            _original_sprites[sprite_path] = pygame.image.load(sprite_path)
+        
+        original_sprite = _original_sprites[sprite_path]
+        
+        # Масштабуємо спрайт
+        if size > 0:
+            # Використовуємо scale замість smoothscale для швидкості
+            scaled_sprite = pygame.transform.scale(original_sprite, (size, size))
+        else:
+            scaled_sprite = original_sprite
+        
+        # Контролюємо розмір кешу
+        if len(_sprite_cache) >= _max_cache_size:
+            # Видаляємо найстарший елемент (простий FIFO)
+            oldest_key = next(iter(_sprite_cache))
+            del _sprite_cache[oldest_key]
+        
+        _sprite_cache[cache_key] = scaled_sprite
+        return scaled_sprite
+        
+    except pygame.error as e:
+        print(f"Помилка завантаження спрайту {sprite_path}: {e}")
+        return None
 
 # ===== ФУНКЦІЇ =====
 def get_background_image():
     """Повертає фонове зображення з масштабуванням під розмір екрану"""
     return pygame.transform.scale(
-        pygame.image.load("image/icon.png"), 
+        pygame.image.load(UI_BACKGROUND_IMAGE_PATH), 
         (SCREEN_WIDTH, SCREEN_HEIGHT)
     )

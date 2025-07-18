@@ -1,6 +1,7 @@
 # Внутрішньоігровий магазин
 import pygame
 from cash import cash_manager
+from constants import *  # Імпортуємо всі константи
 
 class ShopItem:
     def __init__(self, name, price, description, icon=None):
@@ -27,39 +28,39 @@ class Shop:
         ]
 
     def draw(self, surface):
-        # Малюємо панель магазину в стилі контейнера фігур
+        # Малюємо панель магазину в темному стилі
         # Створюємо поверхню з прозорістю для заливки
         shop_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         
-        # Заливка з прозорістю (використовуємо інший колір ніж для фігур)
-        fill_color = (100, 149, 237, 40)  # Корнфлавер синій з прозорістю 40/255
+        # М'яка темна заливка з прозорістю
+        fill_color = UI_SHOP_BACKGROUND_COLOR  # Використовуємо константу
         pygame.draw.rect(shop_surface, fill_color, (0, 0, self.width, self.height), border_radius=10)
         
         # Малюємо заливку на екрані
         surface.blit(shop_surface, (self.x, self.y))
         
-        # Обводка (синій колір замість коричневого)
-        border_color = (70, 130, 180)  # Сталево-синій
+        # М'який темний контур
+        border_color = UI_SHOP_BORDER_COLOR  # Використовуємо константу
         pygame.draw.rect(surface, border_color, (self.x, self.y, self.width, self.height), width=2, border_radius=10)
         
         # Заголовок магазину по центру контейнера
-        title = self.font.render("МАГАЗИН", True, (255, 255, 255))
+        title = self.font.render("МАГАЗИН", True, UI_SHOP_TITLE_COLOR)  # Використовуємо константу
         title_rect = title.get_rect(center=(self.x + self.width // 2, self.y + 30))
         surface.blit(title, title_rect)
         
         # Показуємо баланс catcoin по центру контейнера
-        balance_text = self.font.render(f"{cash_manager.get_balance()} catcoin", True, (255, 215, 0))
+        balance_text = self.font.render(f"{cash_manager.get_balance()} catcoin", True, UI_SHOP_BALANCE_COLOR)  # Використовуємо константу
         balance_rect = balance_text.get_rect(center=(self.x + self.width // 2, self.y + 60))
         surface.blit(balance_text, balance_rect)
         
         # Малюємо товари
         y_offset = self.y + 100
         for idx, item in enumerate(self.items):
-            # Визначаємо колір тексту
+            # Визначаємо колір тексту для темної теми (використовуємо константи)
             if cash_manager.get_balance() >= item.price:
-                color = (80, 200, 120) if idx == self.selected_index else (200, 200, 200)
+                color = UI_SHOP_ITEM_SELECTED_COLOR if idx == self.selected_index else UI_SHOP_ITEM_AVAILABLE_COLOR
             else:
-                color = (120, 120, 120)  # Сірий, якщо недостатньо коштів
+                color = UI_SHOP_ITEM_UNAVAILABLE_COLOR
             
             item_text = self.font.render(f"{item.name} - {item.price} cc", True, color)
             item_rect = item_text.get_rect(center=(self.x + self.width // 2, y_offset))
@@ -71,7 +72,7 @@ class Shop:
         y_offset = self.y + 100
         for idx, item in enumerate(self.items):
             # Створюємо область кліку по центру для кожного товару
-            item_text = self.font.render(f"{item.name} - {item.price} cc", True, (255, 255, 255))
+            item_text = self.font.render(f"{item.name} - {item.price} cc", True, UI_SHOP_ITEM_AVAILABLE_COLOR)  # Використовуємо константу
             item_rect = item_text.get_rect(center=(self.x + self.width // 2, y_offset))
             
             if item_rect.collidepoint(mouse_pos):

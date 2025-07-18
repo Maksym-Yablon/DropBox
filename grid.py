@@ -14,6 +14,13 @@ class Grid:
         self.combo_multiplier = 1  # Множник комбо
         self.last_clear_success = False
         
+        # Кешування для оптимізації
+        self._cached_grid_rect = None
+        self._cached_cell_rects = None
+        self._cached_offset_x = None
+        self._cached_offset_y = None
+        self._last_cell_size = None
+        
         # Генеруємо початкові фігури, якщо потрібно
         if generate_initial:
             self.generate_simple_initial_setup()
@@ -62,59 +69,73 @@ class Grid:
         # Скидаємо очки після початкового розміщення
         self.score = 0
 
-    def draw(self, surface, cell_size=GRID_CELL_SIZE):
-        """Малює красиву ігрову сітку з заокругленими кутами як на картинці"""
-        from constants import get_block_sprite
+    def _cache_grid_layout(self, cell_size):
+        """Кешує розміщення сітки для оптимізації"""
+        if self._last_cell_size == cell_size and self._cached_cell_rects is not None:
+            return  # Кеш ще актуальний
+            
+        self._last_cell_size = cell_size
+        self._cached_offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
+        self._cached_offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
         
-        offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
-        offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
-        
-        # Загальний розмір сітки
+        # Кешуємо головний прямокутник сітки
         grid_width = self.size * cell_size
         grid_height = self.size * cell_size
+        self._cached_grid_rect = pygame.Rect(
+            self._cached_offset_x - 10, 
+            self._cached_offset_y - 10, 
+            grid_width + 20, 
+            grid_height + 20
+        )
         
-        # Малюємо фон сітки з заокругленими кутами
-        grid_rect = pygame.Rect(offset_x - 10, offset_y - 10, grid_width + 20, grid_height + 20)
-        pygame.draw.rect(surface, GRID_BACKGROUND_COLOR, grid_rect, border_radius=15)
-        
-        # Малюємо рамку навколо всієї сітки
-        pygame.draw.rect(surface, GRID_BORDER_COLOR, grid_rect, width=3, border_radius=15)
-        
-        # Відступ між клітинками (як на картинці)
+        # Кешуємо прямокутники всіх клітинок
         cell_margin = 3
         inner_cell_size = cell_size - cell_margin
+        self._cached_cell_rects = []
         
-        # Малюємо клітинки
+        for row in range(self.size):
+            row_rects = []
+            for col in range(self.size):
+                cell_x = self._cached_offset_x + col * cell_size + cell_margin // 2
+                cell_y = self._cached_offset_y + row * cell_size + cell_margin // 2
+                cell_rect = pygame.Rect(cell_x, cell_y, inner_cell_size, inner_cell_size)
+                row_rects.append((cell_rect, cell_x, cell_y, inner_cell_size))
+            self._cached_cell_rects.append(row_rects)
+
+    def draw(self, surface, cell_size=GRID_CELL_SIZE):
+        """Оптимізована версія малювання сітки"""
+        from constants import get_block_sprite
+        
+        # Використовуємо кеш для прискорення
+        self._cache_grid_layout(cell_size)
+        
+        # Малюємо фон сітки з заокругленими кутами (кешовано)
+        pygame.draw.rect(surface, GRID_BACKGROUND_COLOR, self._cached_grid_rect, border_radius=15)
+        pygame.draw.rect(surface, GRID_BORDER_COLOR, self._cached_grid_rect, width=3, border_radius=15)
+        
+        # Малюємо клітинки використовуючи кешовані прямокутники
+        sprite_size = cell_size - 3 - 4  # Попередньо розраховано
+        
         for row in range(self.size):
             for col in range(self.size):
-                # Позиція клітинки з відступами
-                cell_x = offset_x + col * cell_size + cell_margin // 2
-                cell_y = offset_y + row * cell_size + cell_margin // 2
-                
-                cell_rect = pygame.Rect(cell_x, cell_y, inner_cell_size, inner_cell_size)
+                cell_rect, cell_x, cell_y, inner_cell_size = self._cached_cell_rects[row][col]
                 
                 if self.cells[row][col] is None:
-                    # Порожня клітинка - світла з заокругленими кутами
+                    # Порожня клітинка
                     pygame.draw.rect(surface, EMPTY_CELL_COLOR, cell_rect, border_radius=8)
-                    # Тонка золотиста рамка
                     pygame.draw.rect(surface, GRID_LINE_COLOR, cell_rect, width=1, border_radius=8)
                 else:
-                    # Заповнена клітинка - спробуємо використовувати спрайт
+                    # Заповнена клітинка
                     color = self.cells[row][col]
-                    sprite_size = inner_cell_size - 4  # Трохи менший спрайт для відступів
                     sprite = get_block_sprite(color, sprite_size)
                     
                     if sprite:
-                        # Спочатку малюємо світлий фон
                         pygame.draw.rect(surface, EMPTY_CELL_COLOR, cell_rect, border_radius=8)
-                        # Центруємо спрайт у клітинці
                         sprite_x = cell_x + (inner_cell_size - sprite_size) // 2
                         sprite_y = cell_y + (inner_cell_size - sprite_size) // 2
                         surface.blit(sprite, (sprite_x, sprite_y))
-                        # Тонка золотиста рамка
                         pygame.draw.rect(surface, GRID_LINE_COLOR, cell_rect, width=1, border_radius=8)
                     else:
-                        # Fallback до кольорових прямокутників з заокругленими кутами
                         pygame.draw.rect(surface, color, cell_rect, border_radius=8)
                         pygame.draw.rect(surface, GRID_LINE_COLOR, cell_rect, width=1, border_radius=8)
 

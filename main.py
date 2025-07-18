@@ -18,7 +18,7 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 pygame.display.set_caption("Drop Box")
-pygame.display.set_icon(pygame.image.load("image/icon.png"))
+pygame.display.set_icon(pygame.image.load(UI_ICON_PATH))
 
 # Створюємо об'єкти UI
 grid = grid_module.Grid()  # Ігрове поле
@@ -46,12 +46,14 @@ CACHED_GRID_HEIGHT = GRID_SIZE * GRID_CELL_SIZE
 CACHED_CONTAINER_CENTER_Y = GRID_Y + (CACHED_GRID_HEIGHT - PIECE_CONTAINER_HEIGHT) // 2
 CACHED_SCALE_FACTOR = PIECE_CELL_SIZE / PIECE_CONTAINER_CELL_SIZE
 
-# Оптимізація game over перевірки
+# Оптимізація обчислень
 game_over_check_counter = 0
-GAME_OVER_CHECK_INTERVAL = 30  # Перевіряємо кожні пів секунди замість кожного кадру
+GAME_OVER_CHECK_INTERVAL = 60  # Збільшено до 1 секунди замість пів секунди
+hover_update_counter = 0
+HOVER_UPDATE_INTERVAL = 3  # Оновлюємо ховер ефекти кожні 3 кадри
 
 # Ініціалізуємо магазин (зліва від ігрового поля, вирівнюється з блоком фігур)
-shop_font = pygame.font.Font(None, 28)  # Збільшений розмір шрифту
+shop_font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_SHOP_TITLE)  # Використовуємо константи
 shop_x = 50
 shop_y = CACHED_CONTAINER_CENTER_Y  # Використовуємо ту ж вертикальну позицію що й блок фігур
 shop_width = PIECE_CONTAINER_WIDTH
@@ -206,11 +208,14 @@ while running:
     mouse_x, mouse_y = pygame.mouse.get_pos()
     mouse_pos = (mouse_x, mouse_y)
     
-    # Оновлюємо ховер ефекти для кнопки паузи та меню паузи
-    if pause_menu.is_paused:
-        pause_menu.handle_mouse_motion(mouse_pos)
-    else:
-        pause_button.handle_mouse_motion(mouse_pos)
+    # Оптимізація: оновлюємо ховер ефекти не кожен кадр
+    hover_update_counter += 1
+    if hover_update_counter >= HOVER_UPDATE_INTERVAL:
+        hover_update_counter = 0
+        if pause_menu.is_paused:
+            pause_menu.handle_mouse_motion(mouse_pos)
+        else:
+            pause_button.handle_mouse_motion(mouse_pos)
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -423,13 +428,13 @@ while running:
         # Візуальний індикатор режиму обертання
         if waiting_for_rotate_click:
             # Додаємо підсвічування контейнера фігур
-            pygame.draw.rect(screen, (255, 255, 0), 
+            pygame.draw.rect(screen, UI_ROTATION_HIGHLIGHT_COLOR, 
                            (piece_box.start_x - 5, piece_box.start_y - 5, 
                             piece_box.width + 10, piece_box.height + 10), 3)
             
             # Показуємо текст підказки
-            font = pygame.font.Font(None, 32)
-            hint_text = font.render("Оберіть фігуру для обертання", True, (255, 255, 0))
+            font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_ROTATION_HINT)
+            hint_text = font.render("Оберіть фігуру для обертання", True, UI_ROTATION_HINT_COLOR)
             text_x = piece_box.start_x + (piece_box.width - hint_text.get_width()) // 2
             text_y = piece_box.start_y - 40
             screen.blit(hint_text, (text_x, text_y))

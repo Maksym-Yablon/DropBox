@@ -13,6 +13,13 @@ class UIEffects:
         self.blink_duration = 1.2  # Повільніше миготіння - 1.2 секунди на цикл
         self.is_blinking = False
         
+        # Кешування для оптимізації
+        self._preview_cache = {}
+        self._effect_cache = {}
+        self._last_alpha = None
+        self._alpha_update_interval = 0.033  # Оновлюємо альфу тільки раз на 30ms (33 FPS)
+        self._last_alpha_update = 0
+        
     def start_blinking(self):
         """Запускає ефект мигання"""
         self.blink_start_time = time.time()
@@ -28,24 +35,34 @@ class UIEffects:
             return 160
         
         current_time = time.time()
+        
+        # Оптимізація: оновлюємо альфу тільки коли потрібно
+        if (current_time - self._last_alpha_update < self._alpha_update_interval and 
+            self._last_alpha is not None):
+            return self._last_alpha
+        
         elapsed = current_time - self.blink_start_time
         
         # Синусоїдальна функція для плавного мигання
         blink_cycle = math.sin(elapsed * (2 * math.pi / self.blink_duration))
         # Перетворюємо з діапазону [-1, 1] в [80, 160] для м'якшого ефекту
         alpha = int(120 + blink_cycle * 40)
-        return max(80, min(160, alpha))
+        alpha = max(80, min(160, alpha))
+        
+        self._last_alpha = alpha
+        self._last_alpha_update = current_time
+        return alpha
     
     def draw_piece_preview(self, surface, grid, piece, grid_x, grid_y, cell_size=GRID_CELL_SIZE, valid=True):
         """Малює попередній перегляд фігури з підсвічуванням"""
         offset_x = (SCREEN_WIDTH - grid.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - grid.size * cell_size) // 2
         
-        # Колір підсвічування залежно від валідності
+        # Колір підсвічування залежно від валідності (м'які кольори для темної теми)
         if valid:
-            base_color = (144, 238, 144)  # Світло-салатовий (Light Green)
+            base_color = (120, 180, 120)  # М'який зелений
         else:
-            base_color = (255, 160, 160)  # Світло-червоний для помилок
+            base_color = (180, 100, 100)  # М'який червоний
         
         # Отримуємо прозорість для мигання
         alpha = self.get_blink_alpha() if valid else 120
@@ -202,7 +219,7 @@ class PauseButton:
     def __init__(self):
         self.rect = pygame.Rect(PAUSE_BUTTON_X, PAUSE_BUTTON_Y, PAUSE_BUTTON_SIZE, PAUSE_BUTTON_SIZE)
         self.hovered = False
-        self.font = pygame.font.Font(None, 24)
+        self.font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_PAUSE_BUTTON)
     
     def handle_mouse_motion(self, mouse_pos):
         """Обробляє рух миші для ховер ефекту"""
@@ -224,7 +241,7 @@ class PauseButton:
         pygame.draw.rect(screen, PAUSE_BUTTON_BORDER, self.rect, 2, border_radius=8)
         
         # Малюємо іконку паузи
-        pause_text = self.font.render("II", True, WHITE)
+        pause_text = self.font.render("II", True, TEXT_COLOR)
         text_rect = pause_text.get_rect(center=self.rect.center)
         screen.blit(pause_text, text_rect)
 
@@ -234,7 +251,7 @@ class ControlPanel:
     
     def __init__(self, screen):
         self.screen = screen
-        self.font = pygame.font.SysFont("Arial", 20, bold=True)
+        self.font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_CONTROL_PANEL, bold=UI_USE_BOLD_FONTS)
         self.is_visible = True
         self.hover_button = None  # Кнопка під мишею
         
@@ -395,8 +412,8 @@ class PauseMenu:
         screen.blit(overlay, (0, 0))
         
         # Малюємо заголовок
-        title_font = pygame.font.Font(None, 48)
-        title_text = title_font.render("ПАУЗА", True, WHITE)
+        title_font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_PAUSE_TITLE)
+        title_text = title_font.render("ПАУЗА", True, TEXT_COLOR)
         title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 150))
         screen.blit(title_text, title_rect)
         
@@ -405,17 +422,17 @@ class PauseMenu:
             # Кольори залежно від ховера
             if button['hovered']:
                 button_color = CONTROL_BUTTON_HOVER
-                text_color = WHITE
+                text_color = TEXT_COLOR
             else:
                 button_color = CONTROL_BUTTON_COLOR
                 text_color = CONTROL_BUTTON_TEXT
             
             # Малюємо кнопку
             pygame.draw.rect(screen, button_color, button['rect'], border_radius=8)
-            pygame.draw.rect(screen, WHITE, button['rect'], 2, border_radius=8)
+            pygame.draw.rect(screen, TEXT_COLOR, button['rect'], 2, border_radius=8)
             
             # Малюємо текст
-            font = pygame.font.Font(None, 24)
+            font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_PAUSE_BUTTONS)
             text_surface = font.render(button['text'], True, text_color)
             text_rect = text_surface.get_rect(center=button['rect'].center)
             screen.blit(text_surface, text_rect)
@@ -795,9 +812,8 @@ class GameUI:
     
     def __init__(self, screen):
         self.screen = screen
-        self.score_font = pygame.font.SysFont("Arial",  int(FONT_SIZE * 0.9), bold=True)
-        # Зменшуємо шрифт рекорда на 20% (24 * 0.8 = 19.2 ≈ 19)
-        self.record_font = pygame.font.SysFont("Arial", int(FONT_SIZE_SMALL * 0.8), bold=True)
+        self.score_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HUD_SCORE, bold=UI_USE_BOLD_FONTS)
+        self.record_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HUD_RECORD, bold=UI_USE_BOLD_FONTS)
     
     def draw_hud(self, score, best_score):
         """Малює HUD (очки та рекорд)"""
@@ -806,16 +822,16 @@ class GameUI:
         offset_y = int(SCREEN_HEIGHT * 0.02)  # 2% вгору
         
         # Відображаємо рекорд у верхньому лівому куті (перша позиція)
-        record_text = self.record_font.render(f"Рекорд: {best_score}", True, TEXT_COLOR)
+        record_text = self.record_font.render(f"Рекорд: {best_score}", True, UI_HUD_RECORD_COLOR)
         self.screen.blit(record_text, (35 - offset_x, offset_y))
         
         # Відображаємо очки нижче рекорда (друга позиція) зі зміщенням
-        score_text = self.score_font.render(f"Очки: {score}", True, TEXT_COLOR)
+        score_text = self.score_font.render(f"Очки: {score}", True, UI_HUD_SCORE_COLOR)
         self.screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2,  offset_y))
 
         # Показуємо просту підказку
-        hints_font = pygame.font.SysFont("Arial", 18)
-        hint_text = hints_font.render("N - Нова гра", True, (180, 180, 180))
+        hints_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HINTS)
+        hint_text = hints_font.render("N - Нова гра", True, UI_HINT_COLOR)  # Використовуємо константу
         hint_rect = hint_text.get_rect()
         hint_rect.topright = (SCREEN_WIDTH - 30, 30)
         self.screen.blit(hint_text, hint_rect)
@@ -997,12 +1013,12 @@ class MenuSystem:
     
     def show_splash_screen(self, background_image):
         """Показує заставку перед меню"""
-        self.screen.fill(WHITE)
+        self.screen.fill(BACKGROUND_COLOR)
         self.screen.blit(background_image, (0, 0))
         pygame.display.update()
         
         # Очищення екрану після заставки
-        self.screen.fill(WHITE)
+        self.screen.fill(BACKGROUND_COLOR)
         pygame.display.update()
     
     def main_menu_loop(self, records_manager, background_image, save_manager=None):

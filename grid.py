@@ -63,46 +63,60 @@ class Grid:
         self.score = 0
 
     def draw(self, surface, cell_size=GRID_CELL_SIZE):
-        """Малює ігрову сітку на екрані використовуючи спрайти"""
+        """Малює красиву ігрову сітку з заокругленими кутами як на картинці"""
         from constants import get_block_sprite
         
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
         
-        # Малюємо сітку
+        # Загальний розмір сітки
+        grid_width = self.size * cell_size
+        grid_height = self.size * cell_size
+        
+        # Малюємо фон сітки з заокругленими кутами
+        grid_rect = pygame.Rect(offset_x - 10, offset_y - 10, grid_width + 20, grid_height + 20)
+        pygame.draw.rect(surface, GRID_BACKGROUND_COLOR, grid_rect, border_radius=15)
+        
+        # Малюємо рамку навколо всієї сітки
+        pygame.draw.rect(surface, GRID_BORDER_COLOR, grid_rect, width=3, border_radius=15)
+        
+        # Відступ між клітинками (як на картинці)
+        cell_margin = 3
+        inner_cell_size = cell_size - cell_margin
+        
+        # Малюємо клітинки
         for row in range(self.size):
             for col in range(self.size):
-                rect = pygame.Rect(
-                    offset_x + col * cell_size,
-                    offset_y + row * cell_size,
-                    cell_size, cell_size
-                )
+                # Позиція клітинки з відступами
+                cell_x = offset_x + col * cell_size + cell_margin // 2
+                cell_y = offset_y + row * cell_size + cell_margin // 2
+                
+                cell_rect = pygame.Rect(cell_x, cell_y, inner_cell_size, inner_cell_size)
                 
                 if self.cells[row][col] is None:
-                    # Порожня клітинка - малюємо звичайним кольором
-                    color = EMPTY_CELL_COLOR
-                    pygame.draw.rect(surface, color, rect)
-                    pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)  # Рамка
+                    # Порожня клітинка - світла з заокругленими кутами
+                    pygame.draw.rect(surface, EMPTY_CELL_COLOR, cell_rect, border_radius=8)
+                    # Тонка золотиста рамка
+                    pygame.draw.rect(surface, GRID_LINE_COLOR, cell_rect, width=1, border_radius=8)
                 else:
                     # Заповнена клітинка - спробуємо використовувати спрайт
                     color = self.cells[row][col]
-                    # Робимо спрайт трохи менший для кращого вигляду
-                    sprite_size = cell_size - 1  # Більший відступ для кращого вигляду
+                    sprite_size = inner_cell_size - 4  # Трохи менший спрайт для відступів
                     sprite = get_block_sprite(color, sprite_size)
                     
                     if sprite:
-                        # Спочатку малюємо фон
-                        pygame.draw.rect(surface, EMPTY_CELL_COLOR, rect)
+                        # Спочатку малюємо світлий фон
+                        pygame.draw.rect(surface, EMPTY_CELL_COLOR, cell_rect, border_radius=8)
                         # Центруємо спрайт у клітинці
-                        sprite_x = rect.x + (cell_size - sprite_size) // 2
-                        sprite_y = rect.y + (cell_size - sprite_size) // 2
+                        sprite_x = cell_x + (inner_cell_size - sprite_size) // 2
+                        sprite_y = cell_y + (inner_cell_size - sprite_size) // 2
                         surface.blit(sprite, (sprite_x, sprite_y))
-                        # Малюємо рамку
-                        pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)
+                        # Тонка золотиста рамка
+                        pygame.draw.rect(surface, GRID_LINE_COLOR, cell_rect, width=1, border_radius=8)
                     else:
-                        # Fallback до кольорових прямокутників
-                        pygame.draw.rect(surface, color, rect)
-                        pygame.draw.rect(surface, GRID_LINE_COLOR, rect, 1)  # Рамка
+                        # Fallback до кольорових прямокутників з заокругленими кутами
+                        pygame.draw.rect(surface, color, cell_rect, border_radius=8)
+                        pygame.draw.rect(surface, GRID_LINE_COLOR, cell_rect, width=1, border_radius=8)
 
     def is_row_full(self, row):
         """Перевіряє, чи рядок заповнений"""
@@ -264,15 +278,16 @@ class Grid:
         return True
     
     def highlight_position(self, surface, grid_x, grid_y, piece, cell_size=GRID_CELL_SIZE, valid=True):
-        """Підсвічує позицію для розміщення фігури"""
+        """Підсвічує позицію для розміщення фігури з урахуванням нової сітки"""
         offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
         offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
         
         # Колір підсвічування
-        color = PREVIEW_VALID_COLOR if valid else PREVIEW_INVALID_COLOR  # Зелений або червоний
+        color = PREVIEW_VALID_COLOR if valid else PREVIEW_INVALID_COLOR
         
-        # Створюємо поверхню з прозорістю
-        highlight_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
+        # Відступ між клітинками (як у draw методі)
+        cell_margin = 3
+        inner_cell_size = cell_size - cell_margin
         
         for row in range(len(piece.shape)):
             for col in range(len(piece.shape[row])):
@@ -282,14 +297,16 @@ class Grid:
                     
                     # Перевіряємо, чи в межах екрану
                     if (0 <= target_row < self.size and 0 <= target_col < self.size):
-                        rect = pygame.Rect(
-                            offset_x + target_col * cell_size,
-                            offset_y + target_row * cell_size,
-                            cell_size, cell_size
-                        )
-                        # Малюємо підсвічування
-                        pygame.draw.rect(highlight_surface, color, (0, 0, cell_size, cell_size))
-                        surface.blit(highlight_surface, rect.topleft)
+                        # Позиція клітинки з відступами (як у draw методі)
+                        cell_x = offset_x + target_col * cell_size + cell_margin // 2
+                        cell_y = offset_y + target_row * cell_size + cell_margin // 2
+                        
+                        cell_rect = pygame.Rect(cell_x, cell_y, inner_cell_size, inner_cell_size)
+                        
+                        # Створюємо поверхню з прозорістю
+                        highlight_surface = pygame.Surface((inner_cell_size, inner_cell_size), pygame.SRCALPHA)
+                        pygame.draw.rect(highlight_surface, color, (0, 0, inner_cell_size, inner_cell_size), border_radius=8)
+                        surface.blit(highlight_surface, cell_rect.topleft)
     
     def print_grid_state(self, title="Стан сітки"):
         """Друкує поточний стан сітки для налагодження"""

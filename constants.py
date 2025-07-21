@@ -2,14 +2,26 @@ import pygame
 import random
 
 # ===== РОЗМІРИ ТА ПОЗИЦІЇ =====
-# Розміри екрану
-SCREEN_WIDTH = 1300
-SCREEN_HEIGHT = 700
+# Налаштування для тестування на комп'ютері (встановіть TEST_MODE = True для тестування)
+TEST_MODE = True  # Змініть на False для справжніх мобільних розмірів
 
-# Розміри клітинок
-GRID_CELL_SIZE = 50  # Розмір клітинки сітки
-PIECE_CELL_SIZE = 50  # Розмір клітинки для фігур
-PIECE_CONTAINER_CELL_SIZE = 40  # Менший розмір для фігур у контейнері
+if TEST_MODE:
+    # Розміри для тестування на комп'ютері (вертикальна орієнтація, але менша)
+    SCREEN_WIDTH = 540   # Половина від мобільної ширини
+    SCREEN_HEIGHT = 960  # Приблизно половина від мобільної висоти
+else:
+    # Розміри екрану для мобільного пристрою (вертикальна орієнтація)
+    SCREEN_WIDTH = 1080  # Ширина екрану мобільного пристрою  
+    SCREEN_HEIGHT = 2412  # Висота екрану мобільного пристрою
+
+# Мобільні відступи
+MOBILE_SIDE_MARGIN = 40  # Відступи по боках від краю екрану
+
+# Розміри клітинок (адаптовані під мобільний)
+available_width = SCREEN_WIDTH - (2 * MOBILE_SIDE_MARGIN)  # Доступна ширина з урахуванням відступів
+GRID_CELL_SIZE = available_width // 8 - 2  # Розмір клітинки сітки (8 клітинок + відступи)
+PIECE_CELL_SIZE = GRID_CELL_SIZE  # Розмір клітинки для фігур
+PIECE_CONTAINER_CELL_SIZE = GRID_CELL_SIZE - 10  # Менший розмір для фігур у контейнері
 GRID_CELL_BORDER_RADIUS = 8  # Радіус закруглення для комірок сітки
 
 # Параметри сітки
@@ -17,13 +29,90 @@ GRID_SIZE = 8  # Розмір сітки 8x8
 GRID_COLS = GRID_SIZE
 GRID_ROWS = GRID_SIZE
 
-# Позиція сітки на екрані (центрована)
-GRID_X = (SCREEN_WIDTH - GRID_SIZE * GRID_CELL_SIZE) // 2
-GRID_Y = (SCREEN_HEIGHT - GRID_SIZE * GRID_CELL_SIZE) // 2
+# Мобільні UI елементи (адаптивні під розмір екрана)
+MOBILE_TOP_BAR_HEIGHT = 80  # Висота верхньої панелі
+MOBILE_BUTTON_SIZE = 60  # Розмір кнопок у верхній панелі
+MOBILE_SCORE_AREA_HEIGHT = 120  # Висота області з очками
 
-# Контейнер для фігур
-PIECE_CONTAINER_WIDTH = 250
-PIECE_CONTAINER_HEIGHT = 550  # Збільшено на 10% (500 * 1.1)
+# Контейнер для фігур (адаптований під мобільний та TEST_MODE)
+PIECE_CONTAINER_WIDTH = SCREEN_WIDTH - (2 * MOBILE_SIDE_MARGIN)  # На всю ширину з відступами
+# PIECE_CONTAINER_HEIGHT встановлюється в логіці адаптивного позиціонування вище
+
+# Магазин (адаптований під мобільний та TEST_MODE)
+SHOP_CONTAINER_WIDTH = SCREEN_WIDTH - (2 * MOBILE_SIDE_MARGIN)  # На всю ширину з відступами
+SHOP_BUTTON_SIZE = 60  # Фіксований розмір для стабільності
+# SHOP_CONTAINER_HEIGHT встановлюється в логіці адаптивного позиціонування вище
+
+# Рекламний блок (адаптований під мобільний та TEST_MODE)
+AD_CONTAINER_WIDTH = SCREEN_WIDTH - (2 * MOBILE_SIDE_MARGIN)
+AD_CONTAINER_VISIBLE = True  # Тепер видимий
+# AD_CONTAINER_HEIGHT встановлюється в логіці адаптивного позиціонування вище
+
+# ===== АДАПТИВНЕ ПОЗИЦІОНУВАННЯ КОНТЕЙНЕРІВ =====
+# Рівномірний розподіл висоти екрану з адаптивними відступами
+
+# Верхня панель (header)
+MOBILE_HEADER_HEIGHT = MOBILE_TOP_BAR_HEIGHT + MOBILE_SCORE_AREA_HEIGHT  # 80 + 120 = 200px
+
+# Доступна висота для ігрових елементів
+AVAILABLE_HEIGHT = SCREEN_HEIGHT - MOBILE_HEADER_HEIGHT  # 960 - 200 = 760px
+
+# Адаптивний розподіл доступної висоти (у відсотках)
+GRID_HEIGHT_PERCENT = 0.55      # 55% для ігрового поля (трохи зменшено)
+PIECES_HEIGHT_PERCENT = 0.18    # 18% для контейнера фігур (збільшено)
+SHOP_HEIGHT_PERCENT = 0.10      # 10% для магазину
+AD_HEIGHT_PERCENT = 0.07        # 7% для реклами
+SPACING_HEIGHT_PERCENT = 0.10   # 10% для всіх відступів разом
+
+# Розрахунок реальних розмірів
+GRID_HEIGHT = int(AVAILABLE_HEIGHT * GRID_HEIGHT_PERCENT)      # ~418px
+PIECE_CONTAINER_HEIGHT = int(AVAILABLE_HEIGHT * PIECES_HEIGHT_PERCENT)  # ~136px
+SHOP_CONTAINER_HEIGHT = int(AVAILABLE_HEIGHT * SHOP_HEIGHT_PERCENT)     # ~76px
+AD_CONTAINER_HEIGHT = int(AVAILABLE_HEIGHT * AD_HEIGHT_PERCENT)         # ~53px
+
+# Розрахунок відступів (рівномірно розподіляємо 10% на 5 відступів)
+TOTAL_SPACING = int(AVAILABLE_HEIGHT * SPACING_HEIGHT_PERCENT)  # ~76px
+CONTAINER_SPACING = TOTAL_SPACING // 5  # ~15px на кожен відступ
+
+# Позиціонування контейнерів з рівними відступами
+GRID_Y = MOBILE_HEADER_HEIGHT + CONTAINER_SPACING
+GRID_X = (SCREEN_WIDTH - (GRID_SIZE * GRID_CELL_SIZE)) // 2  # Центрування
+GRID_BOTTOM = GRID_Y + GRID_HEIGHT
+
+PIECE_CONTAINER_Y = GRID_BOTTOM + CONTAINER_SPACING
+SHOP_CONTAINER_Y = PIECE_CONTAINER_Y + PIECE_CONTAINER_HEIGHT + CONTAINER_SPACING
+AD_CONTAINER_Y = SHOP_CONTAINER_Y + SHOP_CONTAINER_HEIGHT + CONTAINER_SPACING
+
+# Нижній відступ (до кінця екрану)
+BOTTOM_MARGIN = CONTAINER_SPACING
+
+# Діагностика розподілу
+TOTAL_USED_HEIGHT = AD_CONTAINER_Y + AD_CONTAINER_HEIGHT + BOTTOM_MARGIN
+REMAINING_HEIGHT = SCREEN_HEIGHT - TOTAL_USED_HEIGHT
+
+print(f"🎯 АДАПТИВНИЙ РОЗПОДІЛ для {SCREEN_WIDTH}x{SCREEN_HEIGHT}:")
+print(f"📏 Header: {MOBILE_HEADER_HEIGHT}px ({MOBILE_HEADER_HEIGHT/SCREEN_HEIGHT*100:.1f}%)")
+print(f"📏 Grid: {GRID_HEIGHT}px ({GRID_HEIGHT_PERCENT*100:.0f}%)")
+print(f"📏 Pieces: {PIECE_CONTAINER_HEIGHT}px ({PIECES_HEIGHT_PERCENT*100:.0f}%)")  
+print(f"📏 Shop: {SHOP_CONTAINER_HEIGHT}px ({SHOP_HEIGHT_PERCENT*100:.0f}%)")
+print(f"📏 Ads: {AD_CONTAINER_HEIGHT}px ({AD_HEIGHT_PERCENT*100:.0f}%)")
+print(f"📏 Відступи: {CONTAINER_SPACING}px кожен ({SPACING_HEIGHT_PERCENT*100:.0f}% загалом)")
+print(f"📏 Використано: {TOTAL_USED_HEIGHT}px, Залишилося: {REMAINING_HEIGHT}px")
+
+# Автокорекція якщо є невелике переповнення/недовикористання
+if abs(REMAINING_HEIGHT) > 20:
+    print(f"⚙️ Автокорекція: коригуємо відступи на {REMAINING_HEIGHT}px")
+    CONTAINER_SPACING += REMAINING_HEIGHT // 5
+    
+    # Перерахунок з новими відступами
+    GRID_Y = MOBILE_HEADER_HEIGHT + CONTAINER_SPACING
+    GRID_BOTTOM = GRID_Y + GRID_HEIGHT
+    PIECE_CONTAINER_Y = GRID_BOTTOM + CONTAINER_SPACING
+    SHOP_CONTAINER_Y = PIECE_CONTAINER_Y + PIECE_CONTAINER_HEIGHT + CONTAINER_SPACING
+    AD_CONTAINER_Y = SHOP_CONTAINER_Y + SHOP_CONTAINER_HEIGHT + CONTAINER_SPACING
+    BOTTOM_MARGIN = CONTAINER_SPACING
+    
+    print(f"📏 Новий відступ: {CONTAINER_SPACING}px")
 
 # Відступи та поля
 PIECE_MARGIN = 1  # Відступ між блоками фігури
@@ -276,3 +365,34 @@ def get_background_image():
         pygame.image.load(UI_BACKGROUND_IMAGE_PATH), 
         (SCREEN_WIDTH, SCREEN_HEIGHT)
     )
+
+# ===== МОБІЛЬНІ КОНСТАНТИ =====
+# Кнопки header'а
+MOBILE_BACK_BUTTON_X = MOBILE_SIDE_MARGIN
+MOBILE_BACK_BUTTON_Y = 20
+MOBILE_SETTINGS_BUTTON_X = SCREEN_WIDTH - MOBILE_SIDE_MARGIN - MOBILE_BUTTON_SIZE
+MOBILE_SETTINGS_BUTTON_Y = 20
+
+# Кольори мобільних кнопок
+MOBILE_BUTTON_COLOR = (70, 130, 180)  # Steel blue
+MOBILE_BUTTON_HOVER_COLOR = (100, 150, 200)
+MOBILE_BUTTON_TEXT_COLOR = (255, 255, 255)
+
+# Магазин константи
+MOBILE_SHOP_Y = PIECE_CONTAINER_Y + PIECE_CONTAINER_HEIGHT + 20
+MOBILE_SHOP_BUTTON_WIDTH = SHOP_CONTAINER_WIDTH // 4
+MOBILE_SHOP_BUTTON_HEIGHT = 60
+
+# Кольори кнопок магазину
+MOBILE_SHOP_ROTATE_COLOR = (50, 205, 50)    # Lime green
+MOBILE_SHOP_RESET_COLOR = (255, 69, 0)      # Red orange  
+MOBILE_SHOP_COPY_COLOR = (255, 215, 0)      # Gold
+MOBILE_SHOP_HINT_COLOR = (138, 43, 226)     # Blue violet
+
+# Кнопки мобільного магазину
+mobile_shop_buttons = [
+    (MOBILE_SIDE_MARGIN, "Поворот", MOBILE_SHOP_ROTATE_COLOR, "rotate"),
+    (MOBILE_SIDE_MARGIN + SHOP_CONTAINER_WIDTH//4, "Скинути", MOBILE_SHOP_RESET_COLOR, "reset"),
+    (MOBILE_SIDE_MARGIN + SHOP_CONTAINER_WIDTH//2, "Бонус", MOBILE_SHOP_COPY_COLOR, "copy"),
+    (MOBILE_SIDE_MARGIN + 3*SHOP_CONTAINER_WIDTH//4, "Підказка", MOBILE_SHOP_HINT_COLOR, "hint"),
+]

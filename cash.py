@@ -42,6 +42,20 @@ class CashManager:
     def set_balance(self, amount):
         """Встановлює баланс catcoin (для завантаження гри)."""
         self.catcoins = amount
+    
+    def get_cash(self):
+        """Псевдонім для get_balance для сумісності"""
+        return self.get_balance()
+    
+    def spend_cash(self, amount):
+        """Псевдонім для spend_catcoins для сумісності"""
+        return self.spend_catcoins(amount)
+    
+    def apply_bonus_multiplier(self, score):
+        """Застосовує бонусний множник до очок"""
+        bonus_coins = score // 5  # 1 catcoin за кожні 5 очок бонусу
+        self.add_coins(bonus_coins)
+        print(f"Бонус застосовано! Отримано {bonus_coins} catcoin!")
 
 # Створюємо єдиний екземпляр менеджера для всієї гри
 cash_manager = CashManager()

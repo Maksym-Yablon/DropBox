@@ -389,7 +389,7 @@ class PieceBox:
         return piece.get_dimensions(self.cell_size)
     
     def _calculate_piece_positions(self):
-        """Обчислює центровані позиції для кожної фігури з адаптивним вирівнюванням та урахуванням next_piece"""
+        """Обчислює центровані позиції для кожної фігури з горизонтальним розташуванням (адаптовано під мобільний)"""
         self.piece_slots = []
         
         if not self.pieces:
@@ -405,51 +405,47 @@ class PieceBox:
             else:
                 pieces_for_calculation.append(piece)
         
-        # Отримуємо реальні розміри всіх фігур (включаючи next_piece де потрібно)
-        piece_heights = []
-        max_width = 0
+        # Отримуємо реальні розміри всіх фігур для горизонтального розташування
+        piece_widths = []
+        max_height = 0
         
         for piece in pieces_for_calculation:
             width, height = self._get_piece_dimensions(piece)
-            piece_heights.append(height)
-            max_width = max(max_width, width)
+            piece_widths.append(width)
+            max_height = max(max_height, height)
         
-        # Розраховуємо адаптивні відступи залежно від розмірів фігур
-        # Для маленьких фігур - більші відступи, для великих - менші
-        total_pieces_height = sum(piece_heights)
-        average_piece_height = total_pieces_height / len(piece_heights) if piece_heights else 0
+        # Розраховуємо адаптивні відступи для горизонтального розташування
+        total_pieces_width = sum(piece_widths)
+        average_piece_width = total_pieces_width / len(piece_widths) if piece_widths else 0
         
-        # Базовий відступ залежить від середнього розміру фігур
-        if average_piece_height <= 40:  # Маленькі фігури (1x1, 2x2)
-            base_spacing = 25
-        elif average_piece_height <= 80:  # Середні фігури (лінії 3x1, T-форми)
-            base_spacing = 18
+        # Базовий відступ залежить від середнього розміру фігур по ширині
+        if average_piece_width <= 40:  # Маленькі фігури (1x1, 2x2)
+            base_spacing = 20
+        elif average_piece_width <= 80:  # Середні фігури (лінії 3x1, T-форми)
+            base_spacing = 15
         else:  # Великі фігури (довгі лінії, великі квадрати)
-            base_spacing = 12
+            base_spacing = 10
         
-        # Обчислюємо коефіцієнт заповнення контейнера
+        # Обчислюємо коефіцієнт заповнення контейнера по ширині
         container_padding = 20
-        available_height = self.height - 2 * container_padding
-        fill_ratio = total_pieces_height / available_height if available_height > 0 else 1
+        available_width = self.width - 2 * container_padding
+        fill_ratio = total_pieces_width / available_width if available_width > 0 else 1
         
         # Адаптуємо відступи залежно від заповнення
         if fill_ratio > 0.8:  # Якщо контейнер заповнений більш ніж на 80%
             adaptive_spacing = max(3, base_spacing * (1 - fill_ratio) * 2)
         elif fill_ratio < 0.5:  # Якщо контейнер заповнений менш ніж на 50%
-            adaptive_spacing = min(base_spacing * 1.5, 35)  # Збільшуємо відступи, але не більше 35
+            adaptive_spacing = min(base_spacing * 1.5, 25)  # Збільшуємо відступи, але не більше 25
         else:
             adaptive_spacing = base_spacing
         
         total_spacing = adaptive_spacing * (len(pieces_for_calculation) - 1) if len(pieces_for_calculation) > 1 else 0
-        total_required = total_pieces_height + total_spacing
-        
-        # Відступи зверху та знизу контейнера
-        # (вже обчислили вище)
+        total_required = total_pieces_width + total_spacing
         
         # Якщо фігури не влазять з адаптивними відступами, зменшуємо їх пропорційно
-        if total_required > available_height and available_height > total_pieces_height:
+        if total_required > available_width and available_width > total_pieces_width:
             # Розподіляємо залишок простору на відступи
-            remaining_space = available_height - total_pieces_height
+            remaining_space = available_width - total_pieces_width
             if len(pieces_for_calculation) > 1:
                 actual_spacing = remaining_space / (len(pieces_for_calculation) - 1)
                 actual_spacing = max(3, actual_spacing)  # Мінімальний відступ 3 пікселі
@@ -458,35 +454,35 @@ class PieceBox:
         else:
             actual_spacing = adaptive_spacing
         
-        # Розраховуємо стартову позицію
-        total_height_with_spacing = total_pieces_height + actual_spacing * (len(pieces_for_calculation) - 1) if len(pieces_for_calculation) > 1 else total_pieces_height
-        start_y = (self.height - total_height_with_spacing) // 2
-        start_y = max(start_y, container_padding // 2)  # Мінімальний відступ зверху
+        # Розраховуємо стартову позицію по горизонталі (центрування)
+        total_width_with_spacing = total_pieces_width + actual_spacing * (len(pieces_for_calculation) - 1) if len(pieces_for_calculation) > 1 else total_pieces_width
+        start_x = (self.width - total_width_with_spacing) // 2
+        start_x = max(start_x, container_padding // 2)  # Мінімальний відступ зліва
         
-        # Додаткова перевірка: якщо все не влазить, починаємо зверху з мінімальним відступом
-        if start_y + total_height_with_spacing > self.height - container_padding // 2:
-            start_y = container_padding // 2
+        # Додаткова перевірка: якщо все не влазить, починаємо зліва з мінімальним відступом
+        if start_x + total_width_with_spacing > self.width - container_padding // 2:
+            start_x = container_padding // 2
         
-        # Розраховуємо позиції для кожної фігури
-        current_y = start_y
+        # Розраховуємо позиції для кожної фігури (горизонтально)
+        current_x = start_x
         
         for i, piece in enumerate(pieces_for_calculation):
             piece_width, piece_height = self._get_piece_dimensions(piece)
             
-            # Центруємо фігуру горизонтально в контейнері
-            center_x = (self.width - piece_width) // 2
+            # Центруємо фігуру вертикально в контейнері
+            center_y = (self.height - piece_height) // 2
             
-            # Позиція по вертикалі - без додаткового центрування в слоті, використовуємо поточну позицію
-            center_y = current_y
+            # Позиція по горизонталі - використовуємо поточну позицію
+            center_x = current_x
             
-            # Зберігаємо позицію фігури
-            self.piece_slots.append((center_x, center_y))
+            # Зберігаємо позицію слота
+            self.piece_slots.append((center_x, center_y, piece_width, piece_height))
             
-            # Переходимо до наступної позиції
-            current_y += piece_height + (actual_spacing if i < len(pieces_for_calculation) - 1 else 0)
+            # Переходимо до наступної позиції (горизонтально)
+            current_x += piece_width + (actual_spacing if i < len(pieces_for_calculation) - 1 else 0)
         
-        # Зберігаємо максимальну ширину для використання в draw()
-        self.max_piece_width = max_width
+        # Зберігаємо максимальну висоту для використання в draw() (змінено з max_width)
+        self.max_piece_height = max_height
     
     def _get_piece_at_position(self, mouse_x, mouse_y):
         """Спільна логіка для знаходження фігури за позицією (оптимізація)"""
@@ -496,7 +492,7 @@ class PieceBox:
             return None, None, None, None, None
             
         # Перевіряємо кожну фігуру в її слоті
-        for i, (slot_x, slot_y) in enumerate(self.piece_slots):
+        for i, (slot_x, slot_y, slot_width, slot_height) in enumerate(self.piece_slots):
             piece = self.pieces[i]
             piece_width, piece_height = self._get_piece_dimensions(piece)
             
@@ -618,7 +614,7 @@ class PieceBox:
 
     def _do_all_pieces_fit(self):
         """Перевіряє, чи всі фігури влазять у контейнер з поточним розміщенням"""
-        for i, (slot_x, slot_y) in enumerate(self.piece_slots):
+        for i, (slot_x, slot_y, slot_width, slot_height) in enumerate(self.piece_slots):
             piece = self.pieces[i]
             piece_width, piece_height = self._get_piece_dimensions(piece)
             
@@ -634,7 +630,7 @@ class PieceBox:
 
     def draw(self, surface):
         """Малює всі фігури в коробці з правильним урахуванням наступної фігури"""
-        for i, (slot_x, slot_y) in enumerate(self.piece_slots):
+        for i, (slot_x, slot_y, slot_width, slot_height) in enumerate(self.piece_slots):
             
             if i == self.dragging_index:
                 # Малюємо наступну фігуру замість перетягуваної з прозорістю

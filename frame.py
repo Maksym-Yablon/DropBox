@@ -69,13 +69,24 @@ class FrameManager:
         return False  # Рамка не змінилася
     
     def draw(self, screen):
-        """Малює поточну рамку на екрані"""
+        """Малює рамку навколо ігрової сітки (ТИМЧАСОВО ВИМКНЕНО для оптимізації відступів)"""
+        # ТИМЧАСОВО ВИМКНЕНО - повернемо після налаштування відступів
+        return
+        
         if self.current_frame is None:
             return
         
-        # Розраховуємо позицію для центрування рамки над сіткою
-        frame_x = GRID_X - (self.current_frame.get_width() - (GRID_SIZE * GRID_CELL_SIZE)) // 2
-        frame_y = GRID_Y - (self.current_frame.get_height() - (GRID_SIZE * GRID_CELL_SIZE)) // 1.4
+        # Рамка просто обрамляє існуючу ігрову сітку
+        # Не змінює позиціонування інших контейнерів
+        grid_width = GRID_SIZE * GRID_CELL_SIZE
+        grid_height = GRID_SIZE * GRID_CELL_SIZE
+        
+        frame_width = self.current_frame.get_width()
+        frame_height = self.current_frame.get_height()
+        
+        # Центруємо рамку точно навколо ігрової сітки (використовуємо GRID_X, GRID_Y з constants.py)
+        frame_x = GRID_X - (frame_width - grid_width) // 2
+        frame_y = GRID_Y - (frame_height - grid_height) // 2
 
         screen.blit(self.current_frame, (frame_x, frame_y))
     

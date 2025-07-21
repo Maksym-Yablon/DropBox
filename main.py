@@ -48,9 +48,9 @@ drag_block_col = 0  # Колонка блоку в фігурі, за яку в�
 drag_block_row = 0  # Рядок блоку в фігурі, за яку взялися
 waiting_for_rotate_click = False  # Режим вибору фігури для обертання
 
-# Кешовані значення для оптимізації
+# Кешовані значення для оптимізації (адаптовані під мобільний)
 CACHED_GRID_HEIGHT = GRID_SIZE * GRID_CELL_SIZE
-CACHED_CONTAINER_CENTER_Y = GRID_Y + (CACHED_GRID_HEIGHT - PIECE_CONTAINER_HEIGHT) // 2
+CACHED_CONTAINER_CENTER_Y = PIECE_CONTAINER_Y  # Використовуємо нову мобільну позицію
 CACHED_SCALE_FACTOR = PIECE_CELL_SIZE / PIECE_CONTAINER_CELL_SIZE
 
 # Оптимізація обчислень
@@ -63,12 +63,12 @@ fps_counter = 0
 current_fps = 0
 FPS_UPDATE_INTERVAL = 30  # Оновлюємо FPS кожні 30 кадрів для стабільності
 
-# Ініціалізуємо магазин (зліва від ігрового поля, вирівнюється з блоком фігур)
+# Ініціалізуємо магазин (адаптований під мобільний формат)
 shop_font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_SHOP_TITLE)  # Використовуємо константи
-shop_x = 50
-shop_y = CACHED_CONTAINER_CENTER_Y  # Використовуємо ту ж вертикальну позицію що й блок фігур
-shop_width = PIECE_CONTAINER_WIDTH
-shop_height = PIECE_CONTAINER_HEIGHT
+shop_x = MOBILE_SIDE_MARGIN  # Позиція з відступом
+shop_y = SHOP_CONTAINER_Y  # Нова позиція під контейнером фігур
+shop_width = SHOP_CONTAINER_WIDTH  # Ширина на весь екран з відступами
+shop_height = SHOP_CONTAINER_HEIGHT  # Нова висота для мобільного
 shop = Shop(shop_x, shop_y, shop_width, shop_height, shop_font)
 
 
@@ -83,8 +83,126 @@ def get_background_image():
         return bg
 
 def create_piece_container(x_position):
-    """Створює контейнер для фігур з кешованими значеннями (оптимізація)"""
-    return PieceBox(x_position, CACHED_CONTAINER_CENTER_Y)
+    """Створює контейнер для фігур з мобільними координатами"""
+    return PieceBox(MOBILE_SIDE_MARGIN, CACHED_CONTAINER_CENTER_Y, PIECE_CONTAINER_WIDTH, PIECE_CONTAINER_HEIGHT)
+
+def draw_mobile_header(surface, score, best_score):
+    """Малює мобільний header з кнопками та очками"""
+    # Кнопка "Назад" (ліва) - зробимо її більш видимою
+    back_button_rect = pygame.Rect(MOBILE_BACK_BUTTON_X, MOBILE_BACK_BUTTON_Y, MOBILE_BUTTON_SIZE, MOBILE_BUTTON_SIZE)
+    pygame.draw.rect(surface, MOBILE_BUTTON_COLOR, back_button_rect, border_radius=8)
+    pygame.draw.rect(surface, (255, 255, 255), back_button_rect, 2, border_radius=8)  # Біла рамка
+    
+    # Текст для кнопки назад
+    font_button = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, 20)
+    back_text = font_button.render("←", True, MOBILE_BUTTON_TEXT_COLOR)
+    text_x = MOBILE_BACK_BUTTON_X + (MOBILE_BUTTON_SIZE - back_text.get_width()) // 2
+    text_y = MOBILE_BACK_BUTTON_Y + (MOBILE_BUTTON_SIZE - back_text.get_height()) // 2
+    surface.blit(back_text, (text_x, text_y))
+    
+    # Кнопка "Налаштування" (права) - зробимо її більш видимою
+    settings_button_rect = pygame.Rect(MOBILE_SETTINGS_BUTTON_X, MOBILE_SETTINGS_BUTTON_Y, MOBILE_BUTTON_SIZE, MOBILE_BUTTON_SIZE)
+    pygame.draw.rect(surface, MOBILE_BUTTON_COLOR, settings_button_rect, border_radius=8)
+    pygame.draw.rect(surface, (255, 255, 255), settings_button_rect, 2, border_radius=8)  # Біла рамка
+    
+    # Текст для кнопки налаштувань
+    settings_text = font_button.render("⚙", True, MOBILE_BUTTON_TEXT_COLOR)
+    text_x = MOBILE_SETTINGS_BUTTON_X + (MOBILE_BUTTON_SIZE - settings_text.get_width()) // 2
+    text_y = MOBILE_SETTINGS_BUTTON_Y + (MOBILE_BUTTON_SIZE - settings_text.get_height()) // 2
+    surface.blit(settings_text, (text_x, text_y))
+    
+    # Рекорд (по центру, зверху)
+    font_record = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, 28)
+    record_text = font_record.render(f"рекорд: {best_score}", True, (255, 200, 0))
+    record_x = (SCREEN_WIDTH - record_text.get_width()) // 2
+    surface.blit(record_text, (record_x, 25))
+    
+    # Поточні очки (по центру, нижче рекорду)
+    font_score = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, 42)
+    score_text = font_score.render(f"Очки: {score}", True, (255, 255, 255))
+    score_x = (SCREEN_WIDTH - score_text.get_width()) // 2
+    surface.blit(score_text, (score_x, 70))
+
+def draw_mobile_shop(surface):
+    """Малює мобільний магазин з кнопками та балансом (адаптивний)"""
+    shop_y = SHOP_CONTAINER_Y
+    
+    # Фон магазину
+    shop_rect = pygame.Rect(MOBILE_SIDE_MARGIN, shop_y, SHOP_CONTAINER_WIDTH, SHOP_CONTAINER_HEIGHT)
+    pygame.draw.rect(surface, (50, 50, 50), shop_rect, border_radius=10)
+    pygame.draw.rect(surface, (100, 100, 100), shop_rect, 2, border_radius=10)  # Рамка
+    
+    # --- Зона балансу (верхні 35% контейнера) ---
+    balance_area_height = SHOP_CONTAINER_HEIGHT * 0.35
+    balance = cash_manager.get_cash()
+    font_size = int(balance_area_height * 0.7) # Адаптивний розмір шрифту
+    font_balance = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, font_size)
+    balance_text = font_balance.render(f"💰 {balance} catcoin", True, (255, 215, 0))
+    
+    # Центруємо текст балансу в його зоні
+    balance_x = MOBILE_SIDE_MARGIN + 15
+    balance_y = shop_y + (balance_area_height - balance_text.get_height()) // 2
+    surface.blit(balance_text, (balance_x, balance_y))
+    
+    # --- Зона кнопок (нижні 65% контейнера) ---
+    buttons_area_y = shop_y + balance_area_height
+    buttons_area_height = SHOP_CONTAINER_HEIGHT - balance_area_height
+    
+    font_size = int(buttons_area_height * 0.25) # Адаптивний шрифт для кнопок
+    font_button = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, font_size)
+    
+    button_width = (SHOP_CONTAINER_WIDTH - 50) // 4  # 4 кнопки, відступи по 10px
+    button_height = buttons_area_height * 0.75 # Кнопка займає 75% висоти своєї зони
+    
+    # Центруємо кнопки по вертикалі в їх зоні
+    button_y = buttons_area_y + (buttons_area_height - button_height) // 2
+    
+    shop_items = [
+        ("🔄", "15", MOBILE_SHOP_ROTATE_COLOR, "rotate"),
+        ("💥", "25", MOBILE_SHOP_RESET_COLOR, "reset"), 
+        ("💎", "0", MOBILE_SHOP_COPY_COLOR, "copy"),
+        ("💡", "10", MOBILE_SHOP_HINT_COLOR, "hint")
+    ]
+    
+    for i, (icon, price, color, action) in enumerate(shop_items):
+        button_x = MOBILE_SIDE_MARGIN + 10 + i * (button_width + 10)
+        button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        
+        # Перевіряємо чи достатньо коштів
+        price_int = int(price) if price != "0" else 0
+        can_afford = balance >= price_int
+        button_color = color if can_afford else (100, 100, 100)
+        
+        # Малюємо кнопку
+        pygame.draw.rect(surface, button_color, button_rect, border_radius=8)
+        pygame.draw.rect(surface, (255, 255, 255), button_rect, 2, border_radius=8)
+        
+        # Іконка (адаптивна позиція)
+        icon_text = font_button.render(icon, True, (255, 255, 255))
+        icon_x = button_x + (button_width - icon_text.get_width()) // 2
+        icon_y = button_y + button_height * 0.15 # Розміщуємо іконку трохи зверху
+        surface.blit(icon_text, (icon_x, icon_y))
+        
+        # Ціна (адаптивна позиція)
+        price_color = (255, 255, 255) if can_afford else (150, 150, 150)
+        price_text = font_button.render(price, True, price_color)
+        price_x = button_x + (button_width - price_text.get_width()) // 2
+        price_y = button_y + button_height - font_size - button_height * 0.1
+        surface.blit(price_text, (price_x, price_y))
+
+def draw_mobile_ad_space(surface):
+    """Малює рекламний блок"""
+    if AD_CONTAINER_VISIBLE:
+        ad_rect = pygame.Rect(MOBILE_SIDE_MARGIN, AD_CONTAINER_Y, AD_CONTAINER_WIDTH, AD_CONTAINER_HEIGHT)
+        pygame.draw.rect(surface, (30, 30, 30), ad_rect, border_radius=10)
+        pygame.draw.rect(surface, (80, 80, 80), ad_rect, 2, border_radius=10)  # Рамка
+        
+        # Текст-заглушка для реклами
+        font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, min(18, AD_CONTAINER_HEIGHT // 4))
+        ad_text = font.render("📱 Місце для реклами", True, (100, 100, 100))
+        text_x = MOBILE_SIDE_MARGIN + (AD_CONTAINER_WIDTH - ad_text.get_width()) // 2
+        text_y = AD_CONTAINER_Y + (AD_CONTAINER_HEIGHT - ad_text.get_height()) // 2
+        surface.blit(ad_text, (text_x, text_y))
 
 def get_piece_at_mouse(mouse_pos):
     """Перевіряє, чи клікнули на фігуру в коробці"""
@@ -112,7 +230,7 @@ def load_saved_game():
         cash_manager.set_balance(saved_data.get("catcoins", 0))
         
         # Відновлюємо фігури в коробці
-        piece_box = create_piece_container(1000)
+        piece_box = create_piece_container(MOBILE_SIDE_MARGIN)
         piece_box.pieces = []
         
         for piece_data in saved_data["pieces_in_box"]:
@@ -130,8 +248,8 @@ def load_saved_game():
         return False
 
 
-# Створюємо коробку для фігур (центрована по висоті ігрового поля)
-piece_box = create_piece_container(1000)
+# Створюємо коробку для фігур (адаптовану під мобільний формат)
+piece_box = create_piece_container(MOBILE_SIDE_MARGIN)
 
 def show_game_over_screen():
     """Показує екран завершення гри з результатами"""
@@ -193,8 +311,8 @@ def reset_game():
     # Створюємо нову сітку
     grid = grid_module.Grid()
     
-    # Створюємо нову коробку з фігурами (використовуємо кешовані значення)
-    piece_box = create_piece_container(1000)
+    # Створюємо нову коробку з фігурами (адаптовану під мобільний)
+    piece_box = create_piece_container(MOBILE_SIDE_MARGIN)
     
     # Скидаємо баланс catcoin
     cash_manager.set_balance(0)
@@ -285,8 +403,73 @@ def handle_events():
                         handle_menu_result(menu_result)
                 continue
 
+            # Перевіряємо клік по мобільним кнопкам header'а
+            if MOBILE_BACK_BUTTON_X <= mouse_pos[0] <= MOBILE_BACK_BUTTON_X + MOBILE_BUTTON_SIZE and \
+               MOBILE_BACK_BUTTON_Y <= mouse_pos[1] <= MOBILE_BACK_BUTTON_Y + MOBILE_BUTTON_SIZE:
+                save_current_game()
+                pause_menu.toggle_pause()
+                menu_result = menu_system.main_menu_loop(records_manager, background_image, game_save_manager)
+                handle_menu_result(menu_result)
+                continue
+            
+            if MOBILE_SETTINGS_BUTTON_X <= mouse_pos[0] <= MOBILE_SETTINGS_BUTTON_X + MOBILE_BUTTON_SIZE and \
+               MOBILE_SETTINGS_BUTTON_Y <= mouse_pos[1] <= MOBILE_SETTINGS_BUTTON_Y + MOBILE_BUTTON_SIZE:
+                result = settings_menu.show_settings_screen()
+                custom_cursor.ensure_custom_cursor()
+                if result == "quit":
+                    running = False
+                continue
+
             if pause_button.handle_click(mouse_pos):
                 pause_menu.toggle_pause()
+                continue
+
+            # Перевіряємо кліки по мобільним кнопкам магазину (адаптивні розміри)
+            shop_clicked = False
+            button_width = (SHOP_CONTAINER_WIDTH - 60) // 4
+            button_height = max(40, SHOP_CONTAINER_HEIGHT - 35)
+            button_y = SHOP_CONTAINER_Y + 25
+            
+            shop_items = [
+                ("🔄", 15, "rotate"),
+                ("💥", 25, "reset"), 
+                ("💎", 0, "copy"),
+                ("💡", 10, "hint")
+            ]
+            
+            for i, (icon, price, action) in enumerate(shop_items):
+                button_x = MOBILE_SIDE_MARGIN + 10 + i * (button_width + 10)
+                
+                if (button_x <= mouse_pos[0] <= button_x + button_width and 
+                    button_y <= mouse_pos[1] <= button_y + button_height):
+                    shop_clicked = True
+                    
+                    if cash_manager.get_cash() >= price:
+                        if action == "rotate":
+                            cash_manager.spend_cash(price)
+                            print("Куплено: Обернути фігуру! Клікніть на фігуру для обертання.")
+                            sound_manager.play_shop_sound()
+                            waiting_for_rotate_click = True
+                        elif action == "reset":
+                            cash_manager.spend_cash(price)
+                            cleared_count = grid.clear_random_cells(5)
+                            print(f"Куплено: Очистити 5 комірок! Очищено {cleared_count} комірок.")
+                            sound_manager.play_shop_sound()
+                        elif action == "copy":
+                            # Безкоштовний бонус
+                            cash_manager.apply_bonus_multiplier(grid.score)
+                            print("Бонус застосовано!")
+                            sound_manager.play_shop_sound()
+                        elif action == "hint":
+                            cash_manager.spend_cash(price)
+                            print("Підказка активована! (поки що заглушка)")
+                            sound_manager.play_shop_sound()
+                    else:
+                        print(f"Недостатньо коштів! Потрібно {price} catcoin.")
+                        sound_manager.play_click_sound()
+                    break
+                    
+            if shop_clicked:
                 continue
 
             shop_result = shop.handle_click(mouse_pos[0], mouse_pos[1], cash_manager, piece_box)
@@ -361,20 +544,27 @@ def handle_events():
             dragged_piece_index = None
 
 def draw_game_elements():
-    """Малює всі елементи гри на екрані"""
+    """Малює всі елементи гри на екрані (адаптовано під мобільний)"""
     global mouse_pos
     screen.fill(BACKGROUND_COLOR)
+    
+    # Малюємо мобільний header
+    best_score = records_manager.get_best_score()
+    draw_mobile_header(screen, grid.score, best_score)
+    
+    # Малюємо ігрове поле
     grid.draw(screen)
     
+    # Малюємо рамку (якщо потрібно)
     frame_manager.update_frame(grid.score)
     frame_manager.draw(screen)
 
-    best_score = records_manager.get_best_score()
-    game_ui.draw_hud(grid.score, best_score, frame_manager)
-
     if not pause_menu.is_paused:
-        shop.draw(screen)
-        pause_button.draw(screen)
+        # Замість старого магазину малюємо мобільний
+        draw_mobile_shop(screen)
+        
+        # Малюємо рекламний блок
+        draw_mobile_ad_space(screen)
 
         if dragging and dragged_piece:
             grid_x, grid_y = grid.mouse_to_grid(mouse_pos[0], mouse_pos[1])

@@ -1,6 +1,7 @@
 # Система звуків для гри
 import pygame
 import os
+import time
 
 class SoundManager:
     """Менеджер для управління всіма звуками в грі"""
@@ -64,7 +65,7 @@ class SoundManager:
                 print(f"Файл звуку не знайдено: {new_game_path}")
             
             # Завантажуємо звук розміщення фігури
-            pick_path = "assets/sounds/effects/pick.mp3"
+            pick_path = "assets/sounds/effects/pick.wav"
             if os.path.exists(pick_path):
                 self.sounds['pick'] = pygame.mixer.Sound(pick_path)
                 self.sounds['pick'].set_volume(self.sfx_volume)
@@ -73,13 +74,31 @@ class SoundManager:
                 print(f"Файл звуку не знайдено: {pick_path}")
                 
             # Завантажуємо звук гейм овер
-            game_over_path = "assets/sounds/effects/game_ower.mp3"
+            game_over_path = "assets/sounds/effects/game_over.mp3"
             if os.path.exists(game_over_path):
                 self.sounds['game_over'] = pygame.mixer.Sound(game_over_path)
                 self.sounds['game_over'].set_volume(self.sfx_volume)
                 print(f"Звук гейм овер завантажено: {game_over_path}")
             else:
                 print(f"Файл звуку не знайдено: {game_over_path}")
+                
+            # Завантажуємо звук кліку на кнопки
+            click_path = "assets/sounds/effects/click_may_2.wav"
+            if os.path.exists(click_path):
+                self.sounds['click'] = pygame.mixer.Sound(click_path)
+                self.sounds['click'].set_volume(self.sfx_volume)
+                print(f"Звук кліку завантажено: {click_path}")
+            else:
+                print(f"Файл звуку не знайдено: {click_path}")
+                
+            # Завантажуємо звук покупки в магазині
+            shop_path = "assets/sounds/effects/pick_shop.wav"
+            if os.path.exists(shop_path):
+                self.sounds['shop'] = pygame.mixer.Sound(shop_path)
+                self.sounds['shop'].set_volume(self.sfx_volume)
+                print(f"Звук покупки в магазині завантажено: {shop_path}")
+            else:
+                print(f"Файл звуку не знайдено: {shop_path}")
             
             # Завантажуємо основну фонову музику
             background_music_path = "assets/sounds/music/back_musik.mp3"
@@ -176,6 +195,26 @@ class SoundManager:
                 print("Відтворюється звук очищення комірок!")
             except pygame.error as e:
                 print(f"Помилка відтворення звуку очищення комірок: {e}")
+
+    def play_click_sound(self):
+        """Відтворює звук кліку (використовує спеціальний звук click_may_2.wav)"""
+        if (self.sound_enabled and self.sfx_volume > 0 and 'click' in self.sounds and 
+            self._can_play_sound('click')):
+            try:
+                self.sounds['click'].play()
+                print("Відтворюється звук кліку!")
+            except pygame.error as e:
+                print(f"Помилка відтворення звуку кліку: {e}")
+
+    def play_shop_sound(self):
+        """Відтворює звук покупки в магазині (pick_shop.wav)"""
+        if (self.sound_enabled and self.sfx_volume > 0 and 'shop' in self.sounds and 
+            self._can_play_sound('shop')):
+            try:
+                self.sounds['shop'].play()
+                print("Відтворюється звук покупки в магазині!")
+            except pygame.error as e:
+                print(f"Помилка відтворення звуку покупки в магазині: {e}")
     
     def start_background_music(self):
         """Запускає фонову музику"""

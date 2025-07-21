@@ -1,11 +1,14 @@
 from builtins import range
 import pygame
+import random
+import os
 from sys import exit
 
 # Імпорт модулів гри
 from constants import *
 import grid as grid_module
 from piece import PieceBox, Piece
+import ui
 from ui import ui_effects, GameOverScreen, GameUI, MenuSystem, PauseButton, PauseMenu, SettingsMenu, CustomCursor
 from records import records_manager
 from save_manager import game_save_manager
@@ -30,7 +33,11 @@ pause_button = PauseButton()
 pause_menu = PauseMenu()
 settings_menu = SettingsMenu(screen, clock)
 frame_manager = FrameManager()  # Менеджер рамок
-custom_cursor = CustomCursor()  # Кастомний курсор
+
+# Ініціалізуємо глобальний курсор
+import ui
+ui.global_cursor = CustomCursor()
+custom_cursor = ui.global_cursor  # Локальна змінна для зручності
 
 
 # Основний цикл гри (запускається після натискання "Грати")
@@ -52,8 +59,12 @@ CACHED_SCALE_FACTOR = PIECE_CELL_SIZE / PIECE_CONTAINER_CELL_SIZE
 # Оптимізація обчислень
 game_over_check_counter = 0
 GAME_OVER_CHECK_INTERVAL = 60  # Збільшено до 1 секунди замість пів секунди
-hover_update_counter = 0
-HOVER_UPDATE_INTERVAL = 3  # Оновлюємо ховер ефекти кожні 3 кадри
+# Видаляємо hover_update для плавності курсора - обробляємо ховер прямо в циклі
+
+# Додаємо змінні для розрахунку FPS
+fps_counter = 0
+current_fps = 0
+FPS_UPDATE_INTERVAL = 30  # Оновлюємо FPS кожні 30 кадрів для стабільності
 
 # Ініціалізуємо магазин (зліва від ігрового поля, вирівнюється з блоком фігур)
 shop_font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_SHOP_TITLE)  # Використовуємо константи
@@ -63,6 +74,16 @@ shop_width = PIECE_CONTAINER_WIDTH
 shop_height = PIECE_CONTAINER_HEIGHT
 shop = Shop(shop_x, shop_y, shop_width, shop_height, shop_font)
 
+
+def get_background_image():
+    """Повертає фонове зображення для меню"""
+    try:
+        return pygame.image.load("image/icon.png")
+    except pygame.error:
+        # Якщо не вдалося завантажити зображення, створюємо просту поверхню
+        bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        bg.fill(BACKGROUND_COLOR)
+        return bg
 
 def create_piece_container(x_position):
     """Створює контейнер для фігур з кешованими значеннями (оптимізація)"""
@@ -164,7 +185,7 @@ def check_game_over():
 
 def reset_game():
     """Скидає гру до початкового стану"""
-    global grid, piece_box, dragging, dragged_piece, dragged_piece_index, drag_offset_x, drag_offset_y, drag_block_col, drag_block_row, game_over_check_counter, waiting_for_rotate_click
+    global grid, piece_box, dragging, dragged_piece, dragged_piece_index, drag_offset_x, drag_offset_y, drag_block_col, drag_block_row, game_over_check_counter, waiting_for_rotate_click, fps_counter, current_fps
     
     # Відтворюємо звук нової гри
     sound_manager.play_new_game_sound()
@@ -207,22 +228,15 @@ else:
     reset_game()
 
 while running:
-    # Переконуємося, що стандартний курсор завжди прихований
-    if pygame.mouse.get_visible():
-        pygame.mouse.set_visible(False)
-    
     # Кешуємо позицію миші один раз на початку кадру для оптимізації
     mouse_x, mouse_y = pygame.mouse.get_pos()
     mouse_pos = (mouse_x, mouse_y)
     
-    # Оптимізація: оновлюємо ховер ефекти не кожен кадр
-    hover_update_counter += 1
-    if hover_update_counter >= HOVER_UPDATE_INTERVAL:
-        hover_update_counter = 0
-        if pause_menu.is_paused:
-            pause_menu.handle_mouse_motion(mouse_pos)
-        else:
-            pause_button.handle_mouse_motion(mouse_pos)
+    # Оновлюємо ховер ефекти без додаткових лічильників для максимальної плавності
+    if pause_menu.is_paused:
+        pause_menu.handle_mouse_motion(mouse_pos)
+    else:
+        pause_button.handle_mouse_motion(mouse_pos)
     
     for event in pygame.event.get():
         # Обробляємо події для кастомного курсора
@@ -236,6 +250,11 @@ while running:
                 pause_menu.toggle_pause()
             elif event.key == pygame.K_r and pygame.key.get_pressed()[pygame.K_LCTRL]:
                 reset_game()
+            # Тимчасова функція для нарахування catcoin (клавіша C)
+            elif event.key == pygame.K_c:
+                cash_manager.catcoins += 1000
+                sound_manager.play_pick_sound()  # Звуковий ефект
+                print(f"💰 Додано 1000 catcoin! Поточний баланс: {cash_manager.get_balance()}")
             # Команди для налагодження (тільки якщо гра не на паузі)
             elif not pause_menu.is_paused:
                 if event.key == pygame.K_r:  # R - скидання сітки
@@ -295,14 +314,16 @@ while running:
                 if shop_result:
                     if shop_result == "rotate_purchased":
                         print("Куплено: Обернути фігуру! Клікніть на фігуру для обертання.")
+                        # Відтворюємо звук покупки в магазині
+                        sound_manager.play_shop_sound()
                         # Активуємо режим вибору фігури для обертання
                         waiting_for_rotate_click = True
                     elif shop_result == "clear_cells_purchased":
                         # Виконуємо очищення комірок відразу
                         cleared_count = grid.clear_random_cells(5)
                         print(f"Куплено: Очистити 5 комірок! Очищено {cleared_count} комірок.")
-                        # Відтворюємо спеціальний звук очищення
-                        sound_manager.play_clear_cells_sound()
+                        # Відтворюємо звук покупки в магазині
+                        sound_manager.play_shop_sound()
                     elif shop_result == "insufficient_funds":
                         print("Недостатньо коштів!")
                     continue  # Пропускаємо обробку перетягування фігур
@@ -349,7 +370,7 @@ while running:
                 
             # Закінчити перетягування
             if dragging and dragged_piece:
-                grid_x, grid_y = grid.mouse_to_grid(mouse_x, mouse_y)
+                grid_x, grid_y = grid.mouse_to_grid(mouse_pos[0], mouse_pos[1])
                 
                 # Корегуємо позицію з урахуванням того, за який блок фігури взялися
                 target_grid_x = grid_x - drag_block_col
@@ -421,7 +442,7 @@ while running:
     if not pause_menu.is_paused:
         # Підсвічування під час перетягування з новими ефектами
         if dragging and dragged_piece:
-            grid_x, grid_y = grid.mouse_to_grid(mouse_x, mouse_y)
+            grid_x, grid_y = grid.mouse_to_grid(mouse_pos[0], mouse_pos[1])
             
             # Корегуємо позицію з урахуванням того, за який блок фігури взялися
             target_grid_x = grid_x - drag_block_col
@@ -460,13 +481,16 @@ while running:
             scaled_offset_y = drag_offset_y * CACHED_SCALE_FACTOR
             
             # Віднімаємо скореговане зміщення кліку
-            dragged_piece.draw(screen, mouse_x - scaled_offset_x, mouse_y - scaled_offset_y, PIECE_CELL_SIZE)
+            dragged_piece.draw(screen, mouse_pos[0] - scaled_offset_x, mouse_pos[1] - scaled_offset_y, PIECE_CELL_SIZE)
 
         # Оптимізована перевірка на кінець гри (не кожен кадр)
         game_over_check_counter += 1
         if game_over_check_counter >= GAME_OVER_CHECK_INTERVAL:
             game_over_check_counter = 0
             if check_game_over():
+                # Відтворюємо звук завершення гри
+                sound_manager.play_game_over_sound()
+                
                 result = show_game_over_screen()
                 if result == "restart":
                     reset_game()
@@ -491,6 +515,16 @@ while running:
     if pause_menu.is_paused:
         pause_menu.draw(screen)
     
+    # Розраховуємо та відображаємо FPS
+    if settings_menu.show_fps:
+        fps_counter += 1
+        if fps_counter >= FPS_UPDATE_INTERVAL:
+            current_fps = clock.get_fps()
+            fps_counter = 0
+        
+        # Малюємо FPS лічильник
+        game_ui.draw_fps(current_fps, settings_menu.show_fps)
+    
     # Малюємо кастомний курсор поверх всього
     custom_cursor.draw(screen, mouse_pos)
     
@@ -500,8 +534,9 @@ while running:
 # Зберігаємо гру при виході
 save_current_game()
 
-# Очищуємо кастомний курсор при виході
-custom_cursor.cleanup()
+# Очищуємо глобальний курсор при виході
+if ui.global_cursor:
+    ui.global_cursor.cleanup()
 
 pygame.quit()
 exit()

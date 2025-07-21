@@ -4,6 +4,7 @@ import math
 import time
 from sys import exit
 from constants import *
+from sound import sound_manager
 
 class UIEffects:
     """Клас для візуальних ефектів інтерфейсу"""
@@ -172,7 +173,7 @@ class UIEffects:
                 pygame.draw.rect(surface, (255, 200, 150), rect, 2)
     
     def draw_enhanced_preview(self, surface, grid, piece, grid_x, grid_y, cell_size=GRID_CELL_SIZE):
-        """Комплексний попередній перегляд з підсвічуванням фігури та майбутнього очищення"""
+        """Комплексний попередній перегляд з підсвічуванням фігури (ОПТИМІЗОВАНА ВЕРСІЯ)"""
         valid = grid.can_place_piece(piece, grid_x, grid_y)
         
         if valid:
@@ -180,14 +181,8 @@ class UIEffects:
             if not self.is_blinking:
                 self.start_blinking()
             
-            # Отримуємо лінії для очищення
-            full_rows, full_cols = self.get_lines_to_clear_preview(grid, piece, grid_x, grid_y)
-            
-            # Спочатку малюємо попередній перегляд очищення
-            if full_rows or full_cols:
-                self.draw_clearing_preview(surface, grid, full_rows, full_cols, cell_size)
-            
-            # Потім малюємо попередній перегляд фігури
+            # ОПТИМІЗАЦІЯ: Пропускаємо складні розрахунки очищення ліній для плавності курсора
+            # Тільки малюємо простий попередній перегляд фігури
             self.draw_piece_preview(surface, grid, piece, grid_x, grid_y, cell_size, valid)
         else:
             # Зупиняємо мигання для невалідних позицій
@@ -228,6 +223,8 @@ class PauseButton:
     def handle_click(self, mouse_pos):
         """Обробляє клік по кнопці"""
         if self.rect.collidepoint(mouse_pos):
+            # Відтворюємо звук кліку по кнопці
+            sound_manager.play_click_sound()
             return True
         return False
     
@@ -258,10 +255,10 @@ class ControlPanel:
         # Визначаємо кнопки панелі
         self.buttons = {
             'pause': self._create_button(0, "⏸ Пауза"),
-            'restart': self._create_button(1, "🔄 Нова гра"), 
-            'settings': self._create_button(2, "⚙ Налаштування"),
-            'help': self._create_button(3, "❓ Допомога"),
-            'menu': self._create_button(4, "🏠 Меню")
+            'restart': self._create_button(1, "Нова гра"), 
+            'settings': self._create_button(2, "Налаштування"),
+            'help': self._create_button(3, "Допомога"),
+            'menu': self._create_button(4, "Меню")
         }
     
     def _create_button(self, index, text):
@@ -389,6 +386,8 @@ class PauseMenu:
             
         for button in self.buttons:
             if button['rect'].collidepoint(mouse_pos):
+                # Відтворюємо звук кліку по кнопці
+                sound_manager.play_click_sound()
                 return button['action']
         return None
     
@@ -492,6 +491,9 @@ class SettingsMenu:
         from sound import sound_manager
         self.sound_manager = sound_manager
         
+        # Налаштування для FPS
+        self.show_fps = True
+        
         # Налаштування регуляторів
         self.slider_width = 300
         self.slider_height = 20
@@ -581,26 +583,38 @@ class SettingsMenu:
         return distance <= self.knob_size // 2
     
     def show_settings_screen(self):
-        """Показує екран налаштувань"""
-        # Створюємо кастомний курсор для екрану налаштувань
-        settings_cursor = CustomCursor()
-        
+        """Показує екран налаштувань"""        
         while True:
             mouse_pos = pygame.mouse.get_pos()
             
             for event in pygame.event.get():
-                # Обробляємо події для кастомного курсора
-                settings_cursor.handle_mouse_event(event)
+                # Обробляємо події для глобального курсора
+                if global_cursor:
+                    global_cursor.handle_mouse_event(event)
                 
                 if event.type == pygame.QUIT:
-                    settings_cursor.cleanup()
+                    if global_cursor:
+                        global_cursor.cleanup()
                     return "quit"
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        settings_cursor.cleanup()
+                        if global_cursor:
+                            global_cursor.cleanup()
                         return "back"
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button != 1:  # Тільки ліва кнопка миші
+                        continue
+                        
+                    # Перевіряємо клік по чекбоксу FPS
+                    fps_click_area = pygame.Rect(
+                        (SCREEN_WIDTH - 300) // 2,
+                        450,
+                        200,
+                        20
+                    )
+                    if fps_click_area.collidepoint(mouse_pos):
+                        self.show_fps = not self.show_fps
+                        sound_manager.play_click_sound()
                         continue
                         
                     # Перевіряємо кліки по повзункам
@@ -675,6 +689,33 @@ class SettingsMenu:
             self.draw_slider(self.sfx_slider_rect, self.sound_manager.sfx_volume, "Гучність ефектів")
             self.draw_slider(self.music_slider_rect, self.sound_manager.music_volume, "Гучність музики")
             
+            # Чекбокс для FPS лічильника
+            fps_checkbox_rect = pygame.Rect(
+                (SCREEN_WIDTH - 300) // 2,
+                450,
+                20,
+                20
+            )
+            
+            # Малюємо чекбокс
+            checkbox_color = (255, 255, 255) if self.show_fps else (100, 100, 100)
+            pygame.draw.rect(self.screen, checkbox_color, fps_checkbox_rect, border_radius=3)
+            pygame.draw.rect(self.screen, (255, 255, 255), fps_checkbox_rect, 2, border_radius=3)
+            
+            # Малюємо галочку якщо увімкнено
+            if self.show_fps:
+                pygame.draw.line(self.screen, (0, 0, 0), 
+                               (fps_checkbox_rect.x + 4, fps_checkbox_rect.y + 10),
+                               (fps_checkbox_rect.x + 8, fps_checkbox_rect.y + 14), 2)
+                pygame.draw.line(self.screen, (0, 0, 0),
+                               (fps_checkbox_rect.x + 8, fps_checkbox_rect.y + 14),
+                               (fps_checkbox_rect.x + 16, fps_checkbox_rect.y + 6), 2)
+            
+            # Підпис чекбокса
+            fps_label = self.font_medium.render("Показувати FPS", True, TEXT_COLOR)
+            fps_label_rect = fps_label.get_rect(left=fps_checkbox_rect.right + 10, centery=fps_checkbox_rect.centery)
+            self.screen.blit(fps_label, fps_label_rect)
+            
             # Кнопка "Назад"
             back_button_rect = pygame.Rect(
                 (SCREEN_WIDTH - 200) // 2,
@@ -695,7 +736,10 @@ class SettingsMenu:
             
             # Перевіряємо клік по кнопці "Назад"
             if pygame.mouse.get_pressed()[0] and back_button_rect.collidepoint(mouse_pos):
-                settings_cursor.cleanup()
+                # Відтворюємо звук кліку
+                sound_manager.play_click_sound()
+                if global_cursor:
+                    global_cursor.cleanup()
                 return "back"
             
             # Інструкція
@@ -703,8 +747,9 @@ class SettingsMenu:
             instruction_rect = instruction.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
             self.screen.blit(instruction, instruction_rect)
             
-            # Малюємо кастомний курсор поверх всього
-            settings_cursor.draw(self.screen, mouse_pos)
+            # Малюємо глобальний курсор поверх всього
+            if global_cursor:
+                global_cursor.draw(self.screen, mouse_pos)
             
             pygame.display.flip()
             self.clock.tick(60)
@@ -718,6 +763,7 @@ settings_menu = None    # Ініціалізується в main.py
 game_over_screen = None # Ініціалізується в main.py
 game_ui = None         # Ініціалізується в main.py 
 menu_system = None     # Ініціалізується в main.py
+global_cursor = None   # Глобальний курсор для всієї програми
 
 class GameOverScreen:
     """Клас для екрану завершення гри"""
@@ -744,11 +790,16 @@ class GameOverScreen:
         
         # Екран результатів
         while True:
+            mouse_pos = pygame.mouse.get_pos()
+            
             # Ініціалізуємо кнопки
             try_again_button = pygame.Rect(SCREEN_WIDTH // 2 - 150, 350, BUTTON_WIDTH_LARGE, BUTTON_HEIGHT)
             menu_button = pygame.Rect(SCREEN_WIDTH // 2 - 100, 430, BUTTON_WIDTH_MEDIUM, BUTTON_HEIGHT)
             
             for event in pygame.event.get():
+                # Обробляємо події для глобального курсора
+                if global_cursor:
+                    global_cursor.handle_mouse_event(event)
                 if event.type == pygame.QUIT:
                     return "quit"
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -757,8 +808,10 @@ class GameOverScreen:
                         continue  # Ігноруємо всі інші кнопки миші
                     # Перевіряємо натискання кнопок
                     if try_again_button.collidepoint(event.pos):
+                        sound_manager.play_click_sound()
                         return "restart"
                     elif menu_button.collidepoint(event.pos):
+                        sound_manager.play_click_sound()
                         return "menu"
                 elif event.type == pygame.MOUSEWHEEL:
                     # Ігноруємо прокручування колеса миші
@@ -815,6 +868,10 @@ class GameOverScreen:
             instruction1_rect = instruction1.get_rect(center=(SCREEN_WIDTH // 2, 550))
             self.screen.blit(instruction1, instruction1_rect)
             
+            # Малюємо глобальний курсор поверх всього
+            if global_cursor:
+                global_cursor.draw(self.screen, mouse_pos)
+            
             pygame.display.flip()
             self.clock.tick(60)
 
@@ -849,6 +906,39 @@ class GameUI:
         hint_rect = hint_text.get_rect()
         hint_rect.topright = (SCREEN_WIDTH - 30, 30)
         self.screen.blit(hint_text, hint_rect)
+    
+    def draw_fps(self, fps, show_fps=True):
+        """Малює FPS лічильник в правому нижньому куті"""
+        if not show_fps:
+            return
+        
+        # Визначаємо колір залежно від FPS
+        if fps >= 50:
+            color = (0, 255, 0)  # Зелений - відмінна продуктивність
+        elif fps >= 30:
+            color = (255, 255, 0)  # Жовтий - хороша продуктивність
+        elif fps >= 20:
+            color = (255, 165, 0)  # Помаранчевий - задовільна продуктивність
+        else:
+            color = (255, 0, 0)  # Червоний - погана продуктивність
+        
+        # Створюємо шрифт для FPS
+        fps_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, 20, bold=True)
+        fps_text = fps_font.render(f"FPS: {fps:.1f}", True, color)
+        
+        # Розташовуємо в правому нижньому куті
+        fps_rect = fps_text.get_rect()
+        fps_rect.bottomright = (SCREEN_WIDTH - 10, SCREEN_HEIGHT - 10)
+        
+        # Малюємо напівпрозорий фон для кращої читабельності
+        bg_rect = fps_rect.inflate(10, 5)
+        bg_surface = pygame.Surface((bg_rect.width, bg_rect.height))
+        bg_surface.set_alpha(128)
+        bg_surface.fill((0, 0, 0))
+        self.screen.blit(bg_surface, bg_rect)
+        
+        # Малюємо текст FPS
+        self.screen.blit(fps_text, fps_rect)
 
 
 class MenuSystem:
@@ -952,24 +1042,22 @@ class MenuSystem:
                 break
     
     def show_records_screen(self, records_manager):
-        """Показує екран з рекордами"""
-        # Створюємо кастомний курсор для екрану рекордів
-        records_cursor = CustomCursor()
-        
+        """Показує екран з рекордами"""        
         while True:
             mouse_pos = pygame.mouse.get_pos()
             
             for event in pygame.event.get():
-                # Обробляємо події для кастомного курсора
-                records_cursor.handle_mouse_event(event)
+                # Обробляємо події для глобального курсора
+                if global_cursor:
+                    global_cursor.handle_mouse_event(event)
                 
                 if event.type == pygame.QUIT:
-                    records_cursor.cleanup()
+                    if global_cursor:
+                        global_cursor.cleanup()
                     pygame.quit()
                     exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        records_cursor.cleanup()
                         return  # Повертаємося до головного меню
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     # Перевіряємо, що натиснута саме ліва кнопка миші
@@ -1032,8 +1120,9 @@ class MenuSystem:
             instruction_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
             self.screen.blit(instruction_text, instruction_rect)
             
-            # Малюємо кастомний курсор поверх всього
-            records_cursor.draw(self.screen, mouse_pos)
+            # Малюємо глобальний курсор поверх всього
+            if global_cursor:
+                global_cursor.draw(self.screen, mouse_pos)
             
             pygame.display.flip()
             self.clock.tick(60)
@@ -1056,9 +1145,6 @@ class MenuSystem:
         # Створюємо об'єкт налаштувань для меню
         settings_menu = SettingsMenu(self.screen, self.clock)
         
-        # Створюємо кастомний курсор для меню
-        menu_cursor = CustomCursor()
-        
         while True:
             # Перевіряємо наявність збереженої гри
             has_saved_game = save_manager.has_saved_game() if save_manager else False
@@ -1070,11 +1156,13 @@ class MenuSystem:
             buttons = self.draw_menu_buttons(has_saved_game)
             
             for event in pygame.event.get():
-                # Обробляємо події для кастомного курсора
-                menu_cursor.handle_mouse_event(event)
+                # Обробляємо події для глобального курсора
+                if global_cursor:
+                    global_cursor.handle_mouse_event(event)
                 
                 if event.type == pygame.QUIT:
-                    menu_cursor.cleanup()
+                    if global_cursor:
+                        global_cursor.cleanup()
                     pygame.quit()
                     exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -1085,11 +1173,12 @@ class MenuSystem:
                     # Обробляємо кліки по кнопках
                     for button_id, button_rect in buttons:
                         if button_rect.collidepoint(event.pos):
+                            # Відтворюємо звук кліку по кнопці
+                            sound_manager.play_click_sound()
+                            
                             if button_id == 'continue':
-                                menu_cursor.cleanup()
                                 return 'continue'  # Продовжити збережену гру
                             elif button_id == 'play':
-                                menu_cursor.cleanup()
                                 return 'new_game'  # Нова гра
                             elif button_id == 'records':
                                 self.show_records_screen(records_manager)
@@ -1097,20 +1186,23 @@ class MenuSystem:
                             elif button_id == 'settings':
                                 result = settings_menu.show_settings_screen()
                                 if result == "quit":
-                                    menu_cursor.cleanup()
+                                    if global_cursor:
+                                        global_cursor.cleanup()
                                     pygame.quit()
                                     exit()
                                 break
                             elif button_id == 'exit':
-                                menu_cursor.cleanup()
+                                if global_cursor:
+                                    global_cursor.cleanup()
                                 pygame.quit()
                                 exit()
                             break
                 elif event.type == pygame.MOUSEWHEEL:
                     continue
 
-            # Малюємо кастомний курсор поверх всього
-            menu_cursor.draw(self.screen, mouse_pos)
+            # Малюємо глобальний курсор поверх всього
+            if global_cursor:
+                global_cursor.draw(self.screen, mouse_pos)
             
             pygame.display.update()
             self.clock.tick(60)
@@ -1127,6 +1219,9 @@ class CustomCursor:
         self.cursor_offset_x = 0
         self.cursor_offset_y = 0
         
+        # Кешування останньої позиції для оптимізації
+        self.last_drawn_pos = (-1, -1)
+        
         # Завантажуємо курсори
         self._load_cursors()
         
@@ -1137,13 +1232,13 @@ class CustomCursor:
         """Завантажує файли курсорів"""
         try:
             # Завантажуємо звичайний курсор
-            original_normal = pygame.image.load("assets/sprites/ui/cursore1.png")
+            original_normal = pygame.image.load("assets/sprites/ui/cursore1.png").convert_alpha()
             # Масштабуємо до 32x32
             self.normal_cursor = pygame.transform.scale(original_normal, (32, 32))
             print("Звичайний курсор завантажено: cursore1.png (32x32)")
             
             # Завантажуємо курсор натискання
-            original_clicked = pygame.image.load("assets/sprites/ui/cursore2.png")
+            original_clicked = pygame.image.load("assets/sprites/ui/cursore2.png").convert_alpha()
             # Масштабуємо до 32x32
             self.clicked_cursor = pygame.transform.scale(original_clicked, (32, 32))
             print("Курсор натискання завантажено: cursore2.png (32x32)")
@@ -1178,15 +1273,14 @@ class CustomCursor:
         if self.current_cursor is None:
             return
         
-        # Переконуємося, що стандартний курсор прихований
-        if pygame.mouse.get_visible():
-            pygame.mouse.set_visible(False)
-        
-        # Обчислюємо позицію курсора з урахуванням зміщення
+        # Обчислюємо позицію курсора з урахуванням зміщення (максимально просто)
         cursor_x = mouse_pos[0] - self.cursor_offset_x
         cursor_y = mouse_pos[1] - self.cursor_offset_y
         
-        # Малюємо курсор
+        # Оновлюємо кеш позиції
+        self.last_drawn_pos = mouse_pos
+        
+        # Малюємо курсор напряму без додаткових обчислень
         screen.blit(self.current_cursor, (cursor_x, cursor_y))
     
     def set_visible(self, visible):

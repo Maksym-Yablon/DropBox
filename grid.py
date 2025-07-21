@@ -28,9 +28,9 @@ class Grid:
     def generate_simple_initial_setup(self):
         """Проста генерація початкових фігур на сітці"""
         from piece import generate_weighted_random_piece
-        
-        # Випадкова кількість фігур від 2 до 6
-        num_pieces = random.randint(2, 6)
+
+        # Випадкова кількість фігур від 5 до 15
+        num_pieces = random.randint(5, 15)
         placed_pieces = 0
         max_attempts = 30  # Максимум спроб
         

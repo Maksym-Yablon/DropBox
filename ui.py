@@ -11,14 +11,14 @@ class UIEffects:
     
     def __init__(self):
         self.blink_start_time = 0
-        self.blink_duration = 1.2  # Повільніше миготіння - 1.2 секунди на цикл
+        self.blink_duration = 1.0  # Оригінальна тривалість мигання
         self.is_blinking = False
         
         # Кешування для оптимізації
         self._preview_cache = {}
         self._effect_cache = {}
         self._last_alpha = None
-        self._alpha_update_interval = 0.033  # Оновлюємо альфу тільки раз на 30ms (33 FPS)
+        self._alpha_update_interval = 0.05  # Оновлюємо альфу частіше для плавності
         self._last_alpha_update = 0
         
     def start_blinking(self):
@@ -31,9 +31,9 @@ class UIEffects:
         self.is_blinking = False
     
     def get_blink_alpha(self):
-        """Повертає прозорість для ефекту мигання (від 80 до 160 для кращої видимості)"""
+        """Повертає прозорість для ефекту мигання (оригінальна логіка)"""
         if not self.is_blinking:
-            return 160
+            return 140
         
         current_time = time.time()
         
@@ -46,8 +46,8 @@ class UIEffects:
         
         # Синусоїдальна функція для плавного мигання
         blink_cycle = math.sin(elapsed * (2 * math.pi / self.blink_duration))
-        # Перетворюємо з діапазону [-1, 1] в [80, 160] для м'якшого ефекту
-        alpha = int(120 + blink_cycle * 40)
+        # Оригінальний діапазон прозорості від 50 до 150
+        alpha = int(100 + blink_cycle * 50)
         alpha = max(80, min(160, alpha))
         
         self._last_alpha = alpha
@@ -87,12 +87,12 @@ class UIEffects:
                         
                         # Малюємо підсвічування з мигающою прозорістю
                         color_with_alpha = (*base_color, alpha)
-                        pygame.draw.rect(preview_surface, color_with_alpha, (0, 0, cell_size, cell_size))
+                        pygame.draw.rect(preview_surface, color_with_alpha, (0, 0, cell_size, cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
                         surface.blit(preview_surface, rect.topleft)
                         
                         # Додаємо тонку рамку для кращої видимості
                         frame_color = (min(255, base_color[0] + 40), min(255, base_color[1] + 40), min(255, base_color[2] + 40))
-                        pygame.draw.rect(surface, frame_color, rect, 2)
+                        pygame.draw.rect(surface, frame_color, rect, 2, border_radius=GRID_CELL_BORDER_RADIUS)
     
     def get_lines_to_clear_preview(self, grid, piece, grid_x, grid_y):
         """Повертає списки рядків та стовпців, які будуть очищені після розміщення фігури"""
@@ -128,7 +128,7 @@ class UIEffects:
         return full_rows, full_cols
     
     def draw_clearing_preview(self, surface, grid, full_rows, full_cols, cell_size=GRID_CELL_SIZE):
-        """Малює мигаючий попередній перегляд очищення ліній"""
+        """Малює мигаючий попередній перегляд очищення ліній (оригінальна логіка)"""
         if not full_rows and not full_cols:
             return
         
@@ -138,8 +138,8 @@ class UIEffects:
         # Отримуємо прозорість для мигання
         alpha = self.get_blink_alpha()
         
-        # Колір для мигання очищення (світло-жовтий/персиковий)
-        clear_color = (255, 218, 185, alpha)  # Персиковий з прозорістю
+        # Використовуємо колір з констант CLEAR_EFFECT_COLOR
+        clear_color = (*CLEAR_EFFECT_COLOR[:3], alpha)  # Беремо RGB з константи, альфу з мигання
         
         # Створюємо поверхню для ефекту
         effect_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
@@ -152,11 +152,9 @@ class UIEffects:
                     offset_y + row * cell_size,
                     cell_size, cell_size
                 )
-                pygame.draw.rect(effect_surface, clear_color, (0, 0, cell_size, cell_size))
+                # Малюємо тільки заливку з мигаючою прозорістю (без рамки)
+                pygame.draw.rect(effect_surface, clear_color, (0, 0, cell_size, cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
                 surface.blit(effect_surface, rect.topleft)
-                
-                # Додаємо м'яку рамку
-                pygame.draw.rect(surface, (255, 200, 150), rect, 2)
         
         # Підсвічуємо стовпці, що будуть очищені
         for col in full_cols:
@@ -166,14 +164,12 @@ class UIEffects:
                     offset_y + row * cell_size,
                     cell_size, cell_size
                 )
-                pygame.draw.rect(effect_surface, clear_color, (0, 0, cell_size, cell_size))
+                # Малюємо тільки заливку з мигаючою прозорістю (без рамки)
+                pygame.draw.rect(effect_surface, clear_color, (0, 0, cell_size, cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
                 surface.blit(effect_surface, rect.topleft)
-                
-                # Додаємо м'яку рамку
-                pygame.draw.rect(surface, (255, 200, 150), rect, 2)
     
     def draw_enhanced_preview(self, surface, grid, piece, grid_x, grid_y, cell_size=GRID_CELL_SIZE):
-        """Комплексний попередній перегляд з підсвічуванням фігури (ОПТИМІЗОВАНА ВЕРСІЯ)"""
+        """Комплексний попередній перегляд з підсвічуванням фігури та ліній (оригінальна логіка)"""
         valid = grid.can_place_piece(piece, grid_x, grid_y)
         
         if valid:
@@ -181,8 +177,14 @@ class UIEffects:
             if not self.is_blinking:
                 self.start_blinking()
             
-            # ОПТИМІЗАЦІЯ: Пропускаємо складні розрахунки очищення ліній для плавності курсора
-            # Тільки малюємо простий попередній перегляд фігури
+            # Отримуємо лінії, які будуть очищені після розміщення фігури
+            full_rows, full_cols = self.get_lines_to_clear_preview(grid, piece, grid_x, grid_y)
+            
+            # Спочатку малюємо підсвічування ліній, що будуть очищені (якщо є)
+            if full_rows or full_cols:
+                self.draw_clearing_preview(surface, grid, full_rows, full_cols, cell_size)
+            
+            # Потім малюємо попередній перегляд фігури поверх
             self.draw_piece_preview(surface, grid, piece, grid_x, grid_y, cell_size, valid)
         else:
             # Зупиняємо мигання для невалідних позицій
@@ -480,9 +482,10 @@ class PauseMenu:
 class SettingsMenu:
     """Клас для меню налаштувань з регуляторами звуку"""
     
-    def __init__(self, screen, clock):
+    def __init__(self, screen, clock, cursor):
         self.screen = screen
         self.clock = clock
+        self.cursor = cursor
         self.font_large = pygame.font.SysFont("Arial", 36, bold=True)
         self.font_medium = pygame.font.SysFont("Arial", 24, bold=True)
         self.font_small = pygame.font.SysFont("Arial", 18, bold=True)
@@ -589,12 +592,10 @@ class SettingsMenu:
             
             for event in pygame.event.get():
                 # Обробляємо події для глобального курсора
-                if global_cursor:
-                    global_cursor.handle_mouse_event(event)
+                self.cursor.handle_mouse_event(event)
                 
                 if event.type == pygame.QUIT:
-                    if global_cursor:
-                        global_cursor.cleanup()
+                    self.cursor.cleanup()
                     return "quit"
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -744,8 +745,7 @@ class SettingsMenu:
             self.screen.blit(instruction, instruction_rect)
             
             # Малюємо глобальний курсор поверх всього
-            if global_cursor:
-                global_cursor.draw(self.screen, mouse_pos)
+            self.cursor.draw(self.screen, mouse_pos)
             
             pygame.display.flip()
             self.clock.tick(60)
@@ -764,9 +764,16 @@ global_cursor = None   # Глобальний курсор для всієї п�
 class GameOverScreen:
     """Клас для екрану завершення гри"""
     
-    def __init__(self, screen, clock):
+    def __init__(self, screen, clock, cursor):
         self.screen = screen
         self.clock = clock
+        self.cursor = cursor
+        # Оптимізація: завантажуємо шрифти один раз
+        self.title_font = pygame.font.SysFont("Arial", FONT_SIZE_LARGE, bold=True)
+        self.score_font = pygame.font.SysFont("Arial", FONT_SIZE, bold=True)
+        self.record_font = pygame.font.SysFont("Arial", FONT_SIZE_SMALL, bold=True)
+        self.button_font = pygame.font.SysFont("Arial", FONT_SIZE_MEDIUM, bold=True)
+        self.instruction_font = pygame.font.SysFont("Arial", 20)
     
     def show(self, final_score, records_manager):
         """Показує екран завершення гри з результатами"""
@@ -794,8 +801,7 @@ class GameOverScreen:
             
             for event in pygame.event.get():
                 # Обробляємо події для глобального курсора
-                if global_cursor:
-                    global_cursor.handle_mouse_event(event)
+                self.cursor.handle_mouse_event(event)
                 if event.type == pygame.QUIT:
                     return "quit"
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -804,9 +810,11 @@ class GameOverScreen:
                         continue  # Ігноруємо всі інші кнопки миші
                     # Перевіряємо натискання кнопок
                     if try_again_button.collidepoint(event.pos):
+                        print("Натиснуто кнопку 'Спробувати ще раз'")
                         sound_manager.play_click_sound()
-                        return "restart"
+                        return "new_game"  # Змінюємо на new_game для сумісності
                     elif menu_button.collidepoint(event.pos):
+                        print("Натиснуто кнопку 'Головне меню'")
                         sound_manager.play_click_sound()
                         return "menu"
                 elif event.type == pygame.MOUSEWHEEL:
@@ -814,7 +822,7 @@ class GameOverScreen:
                     continue
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        return "restart"
+                        return "new_game"  # Змінюємо для сумісності
                     elif event.key == pygame.K_ESCAPE:
                         return "menu"
             
@@ -822,51 +830,53 @@ class GameOverScreen:
             self.screen.fill(BACKGROUND_COLOR)
             
             # Заголовок
-            title_font = pygame.font.SysFont("Arial", FONT_SIZE_LARGE, bold=True)
             if is_new_record:
-                title_text = title_font.render("НОВИЙ РЕКОРД!", True, PIECE_RED)
+                title_text = self.title_font.render("НОВИЙ РЕКОРД!", True, PIECE_RED)
             else:
-                title_text = title_font.render("ГРА ЗАВЕРШЕНА", True, TEXT_COLOR)
+                title_text = self.title_font.render("ГРА ЗАВЕРШЕНА", True, TEXT_COLOR)
             title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 150))
             self.screen.blit(title_text, title_rect)
             
             # Очки
-            score_display_font = pygame.font.SysFont("Arial", FONT_SIZE, bold=True)
-            score_display_text = score_display_font.render(f"Ваш результат: {final_score} очок", True, TEXT_COLOR)
+            score_display_text = self.score_font.render(f"Ваш результат: {final_score} очок", True, TEXT_COLOR)
             score_display_rect = score_display_text.get_rect(center=(SCREEN_WIDTH // 2, 220))
             self.screen.blit(score_display_text, score_display_rect)
             
             # Найкращий результат
             best_score = records_manager.get_best_score()
-            record_font = pygame.font.SysFont("Arial", FONT_SIZE_SMALL, bold=True)
-            best_score_text = record_font.render(f"Найкращий результат: {best_score}", True, TEXT_COLOR)
+            best_score_text = self.record_font.render(f"Найкращий результат: {best_score}", True, TEXT_COLOR)
             best_score_rect = best_score_text.get_rect(center=(SCREEN_WIDTH // 2, 260))
             self.screen.blit(best_score_text, best_score_rect)
             
             # Кнопки
-            button_font = pygame.font.SysFont("Arial", FONT_SIZE_MEDIUM, bold=True)
+            
+            # Перевіряємо ховер ефект для кнопок
+            try_again_hovered = try_again_button.collidepoint(mouse_pos)
+            menu_hovered = menu_button.collidepoint(mouse_pos)
             
             # Малюємо кнопку "Спробувати ще раз"
-            pygame.draw.rect(self.screen, BUTTON_COLOR, try_again_button)
-            try_again_text = button_font.render("Спробувати ще раз", True, TEXT_COLOR)
+            button_color = BUTTON_HOVER_COLOR if try_again_hovered else BUTTON_COLOR
+            pygame.draw.rect(self.screen, button_color, try_again_button)
+            pygame.draw.rect(self.screen, BUTTON_BORDER_COLOR, try_again_button, 2)  # Рамка
+            try_again_text = self.button_font.render("Спробувати ще раз", True, TEXT_COLOR)
             try_again_text_rect = try_again_text.get_rect(center=try_again_button.center)
             self.screen.blit(try_again_text, try_again_text_rect)
             
             # Малюємо кнопку "Головне меню"
-            pygame.draw.rect(self.screen, BUTTON_COLOR, menu_button)
-            menu_text = button_font.render("Головне меню", True, TEXT_COLOR)
+            button_color = BUTTON_HOVER_COLOR if menu_hovered else BUTTON_COLOR
+            pygame.draw.rect(self.screen, button_color, menu_button)
+            pygame.draw.rect(self.screen, BUTTON_BORDER_COLOR, menu_button, 2)  # Рамка
+            menu_text = self.button_font.render("Головне меню", True, TEXT_COLOR)
             menu_text_rect = menu_text.get_rect(center=menu_button.center)
             self.screen.blit(menu_text, menu_text_rect)
             
             # Інструкції
-            instruction_font = pygame.font.SysFont("Arial", 20)
-            instruction1 = instruction_font.render("ПРОБІЛ - грати знову, ESC - меню", True, TEXT_COLOR)
+            instruction1 = self.instruction_font.render("ПРОБІЛ - грати знову, ESC - меню", True, TEXT_COLOR)
             instruction1_rect = instruction1.get_rect(center=(SCREEN_WIDTH // 2, 550))
             self.screen.blit(instruction1, instruction1_rect)
             
             # Малюємо глобальний курсор поверх всього
-            if global_cursor:
-                global_cursor.draw(self.screen, mouse_pos)
+            self.cursor.draw(self.screen, mouse_pos)
             
             pygame.display.flip()
             self.clock.tick(60)
@@ -879,6 +889,8 @@ class GameUI:
         self.screen = screen
         self.score_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HUD_SCORE, bold=UI_USE_BOLD_FONTS)
         self.record_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HUD_RECORD, bold=UI_USE_BOLD_FONTS)
+        self.hints_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HINTS)
+        self.fps_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, 20, bold=True)
     
     def draw_hud(self, score, best_score, frame_manager=None):
         """Малює HUD (очки та рекорд)"""
@@ -897,8 +909,7 @@ class GameUI:
         # Прибираємо підсказки про рамки - це має бути сюрприз!
 
         # Показуємо просту підказку
-        hints_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, UI_FONT_HINTS)
-        hint_text = hints_font.render("N - Нова гра", True, UI_HINT_COLOR)  # Використовуємо константу
+        hint_text = self.hints_font.render("N - Нова гра", True, UI_HINT_COLOR)  # Використовуємо константу
         hint_rect = hint_text.get_rect()
         hint_rect.topright = (SCREEN_WIDTH - 30, 30)
         self.screen.blit(hint_text, hint_rect)
@@ -919,8 +930,7 @@ class GameUI:
             color = (255, 0, 0)  # Червоний - погана продуктивність
         
         # Створюємо шрифт для FPS
-        fps_font = pygame.font.SysFont(UI_FONT_FAMILY_ARIAL, 20, bold=True)
-        fps_text = fps_font.render(f"FPS: {fps:.1f}", True, color)
+        fps_text = self.fps_font.render(f"FPS: {fps:.1f}", True, color)
         
         # Розташовуємо в правому нижньому куті
         fps_rect = fps_text.get_rect()
@@ -940,15 +950,22 @@ class GameUI:
 class MenuSystem:
     """Клас для системи меню"""
     
-    def __init__(self, screen, clock):
+    def __init__(self, screen, clock, cursor):
         self.screen = screen
         self.clock = clock
+        self.cursor = cursor
         self.hovered_button = None  # Кнопка під мишею для ховер ефекту
+        # Оптимізація: завантажуємо шрифти один раз
+        self.button_font = pygame.font.Font(None, 36)
+        self.title_font = pygame.font.SysFont("Arial", FONT_SIZE_LARGE, bold=True)
+        self.record_font = pygame.font.SysFont("Arial", FONT_SIZE_MEDIUM, bold=True)
+        self.date_font = pygame.font.SysFont("Arial", 20)
+        self.no_records_font = pygame.font.SysFont("Arial", FONT_SIZE)
+        self.instruction_font = pygame.font.SysFont("Arial", FONT_SIZE_SMALL)
     
     def draw_menu_buttons(self, has_saved_game=False):
         """Малює кнопки головного меню"""
-        self.screen.fill(BACKGROUND_COLOR)  
-        font = pygame.font.Font(None, 36)  # Трохи більший шрифт
+        self.screen.fill(BACKGROUND_COLOR)
         
         # Визначаємо кількість кнопок залежно від наявності збереження
         if has_saved_game:
@@ -996,7 +1013,7 @@ class MenuSystem:
             pygame.draw.rect(self.screen, WHITE, button_rect, 2, border_radius=8)
             
             # Малюємо текст
-            text_surface = font.render(text, True, text_color)
+            text_surface = self.button_font.render(text, True, text_color)
             text_rect = text_surface.get_rect(center=button_rect.center)
             self.screen.blit(text_surface, text_rect)
             
@@ -1044,12 +1061,10 @@ class MenuSystem:
             
             for event in pygame.event.get():
                 # Обробляємо події для глобального курсора
-                if global_cursor:
-                    global_cursor.handle_mouse_event(event)
+                self.cursor.handle_mouse_event(event)
                 
                 if event.type == pygame.QUIT:
-                    if global_cursor:
-                        global_cursor.cleanup()
+                    self.cursor.cleanup()
                     pygame.quit()
                     exit()
                 elif event.type == pygame.KEYDOWN:
@@ -1067,8 +1082,7 @@ class MenuSystem:
             self.screen.fill(BACKGROUND_COLOR)
             
             # Заголовок
-            title_font = pygame.font.SysFont("Arial", FONT_SIZE_LARGE, bold=True)
-            title_text = title_font.render("ТАБЛИЦЯ РЕКОРДІВ", True, MENU_TITLE_COLOR)
+            title_text = self.title_font.render("ТАБЛИЦЯ РЕКОРДІВ", True, MENU_TITLE_COLOR)
             title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
             self.screen.blit(title_text, title_rect)
             
@@ -1077,7 +1091,6 @@ class MenuSystem:
             
             if records:
                 # Малюємо рекорди
-                record_font = pygame.font.SysFont("Arial", FONT_SIZE_MEDIUM, bold=True)
                 y_offset = 200
                 
                 for i, record in enumerate(records, 1):
@@ -1094,31 +1107,27 @@ class MenuSystem:
                     else:
                         color = MENU_TEXT_COLOR
                     
-                    text_surface = record_font.render(record_text, True, color)
+                    text_surface = self.record_font.render(record_text, True, color)
                     self.screen.blit(text_surface, (200, y_offset))
                     
                     # Дата
-                    date_font = pygame.font.SysFont("Arial", 20)
-                    date_text = date_font.render(record['date'], True, MENU_TEXT_COLOR)
+                    date_text = self.date_font.render(record['date'], True, MENU_TEXT_COLOR)
                     self.screen.blit(date_text, (500, y_offset + 5))
                     
                     y_offset += 45
             else:
                 # Немає рекордів
-                no_records_font = pygame.font.SysFont("Arial", FONT_SIZE)
-                no_records_text = no_records_font.render("Рекордів поки немає", True, MENU_TEXT_COLOR)
+                no_records_text = self.no_records_font.render("Рекордів поки немає", True, MENU_TEXT_COLOR)
                 no_records_rect = no_records_text.get_rect(center=(SCREEN_WIDTH // 2, 300))
                 self.screen.blit(no_records_text, no_records_rect)
             
             # Інструкція
-            instruction_font = pygame.font.SysFont("Arial", FONT_SIZE_SMALL)
-            instruction_text = instruction_font.render("Натисніть ESC для повернення", True, MENU_TEXT_COLOR)
+            instruction_text = self.instruction_font.render("Натисніть ESC для повернення", True, MENU_TEXT_COLOR)
             instruction_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
             self.screen.blit(instruction_text, instruction_rect)
             
             # Малюємо глобальний курсор поверх всього
-            if global_cursor:
-                global_cursor.draw(self.screen, mouse_pos)
+            self.cursor.draw(self.screen, mouse_pos)
             
             pygame.display.flip()
             self.clock.tick(60)
@@ -1139,7 +1148,7 @@ class MenuSystem:
         self.show_splash_screen(background_image)
         
         # Створюємо об'єкт налаштувань для меню
-        settings_menu = SettingsMenu(self.screen, self.clock)
+        settings_menu = SettingsMenu(self.screen, self.clock, self.cursor)
         
         while True:
             # Перевіряємо наявність збереженої гри
@@ -1153,12 +1162,10 @@ class MenuSystem:
             
             for event in pygame.event.get():
                 # Обробляємо події для глобального курсора
-                if global_cursor:
-                    global_cursor.handle_mouse_event(event)
+                self.cursor.handle_mouse_event(event)
                 
                 if event.type == pygame.QUIT:
-                    if global_cursor:
-                        global_cursor.cleanup()
+                    self.cursor.cleanup()
                     pygame.quit()
                     exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -1181,18 +1188,15 @@ class MenuSystem:
                                 break
                             elif button_id == 'settings':
                                 result = settings_menu.show_settings_screen()
-                                # Після повернення з налаштувань забезпечуємо правильність курсора
-                                if global_cursor:
-                                    global_cursor.ensure_custom_cursor()
+                                # Після повернення з налаштуваннями забезпечуємо правильність курсора
+                                self.cursor.ensure_custom_cursor()
                                 if result == "quit":
-                                    if global_cursor:
-                                        global_cursor.cleanup()
+                                    self.cursor.cleanup()
                                     pygame.quit()
                                     exit()
                                 break
                             elif button_id == 'exit':
-                                if global_cursor:
-                                    global_cursor.cleanup()
+                                self.cursor.cleanup()
                                 pygame.quit()
                                 exit()
                             break
@@ -1200,8 +1204,7 @@ class MenuSystem:
                     continue
 
             # Малюємо глобальний курсор поверх всього
-            if global_cursor:
-                global_cursor.draw(self.screen, mouse_pos)
+            self.cursor.draw(self.screen, mouse_pos)
             
             pygame.display.update()
             self.clock.tick(60)
@@ -1217,6 +1220,7 @@ class CustomCursor:
         self.is_clicking = False
         self.cursor_offset_x = 0
         self.cursor_offset_y = 0
+        self.visible = True  # Додаємо стан видимості
         
         # Кешування останньої позиції для оптимізації
         self.last_drawn_pos = (-1, -1)
@@ -1224,8 +1228,9 @@ class CustomCursor:
         # Завантажуємо курсори
         self._load_cursors()
         
-        # Ховаємо стандартний курсор
-        pygame.mouse.set_visible(False)
+        # Ховаємо стандартний курсор, якщо наш курсор видимий
+        if self.visible:
+            pygame.mouse.set_visible(False)
     
     def _load_cursors(self):
         """Завантажує файли курсорів"""
@@ -1253,6 +1258,7 @@ class CustomCursor:
             print(f"Помилка завантаження курсорів: {e}")
             # Якщо не вдалося завантажити, повертаємо стандартний курсор
             pygame.mouse.set_visible(True)
+            self.visible = False
     
     def handle_mouse_event(self, event):
         """Обробляє події миші для зміни стану курсора"""
@@ -1268,31 +1274,33 @@ class CustomCursor:
                 self.current_cursor = self.normal_cursor
     
     def draw(self, screen, mouse_pos):
-        """Малює кастомний курсор на екрані"""
-        if self.current_cursor is None:
+        """Малює кастомний курсор на екрані (оптимізовано)"""
+        if not self.visible or self.current_cursor is None:
             return
-        
-        # Обчислюємо позицію курсора з урахуванням зміщення (максимально просто)
+
+        # Обчислюємо позицію курсора з урахуванням зміщення
         cursor_x = mouse_pos[0] - self.cursor_offset_x
         cursor_y = mouse_pos[1] - self.cursor_offset_y
         
         # Оновлюємо кеш позиції
         self.last_drawn_pos = mouse_pos
         
-        # Малюємо курсор напряму без додаткових обчислень
+        # Малюємо курсор
         screen.blit(self.current_cursor, (cursor_x, cursor_y))
     
     def set_visible(self, visible):
-        """Встановлює видимість кастомного курсора"""
-        if visible:
-            pygame.mouse.set_visible(False)
-        else:
-            pygame.mouse.set_visible(True)
+        """Встановлює видимість кастомного курсора та оновлює системний"""
+        if self.visible != visible:
+            self.visible = visible
+            pygame.mouse.set_visible(not visible)
     
     def ensure_custom_cursor(self):
         """Гарантує, що показується тільки кастомний курсор"""
-        pygame.mouse.set_visible(False)
+        if not self.visible:
+            self.set_visible(True)
+        else:
+            pygame.mouse.set_visible(False) # Просто переконуємось
     
     def cleanup(self):
         """Очищення ресурсів та відновлення стандартного курсора"""
-        pygame.mouse.set_visible(True)
+        self.set_visible(False)

@@ -5,6 +5,10 @@ class CashManager:
         self.catcoins = 0
         self._unconverted_score = 0
 
+    def add_coins(self, amount):
+        """Додає вказану кількість catcoin до балансу."""
+        self.catcoins += amount
+
     def update_from_score(self, score_increase):
         """
         Оновлює баланс catcoin на основі отриманих очок.

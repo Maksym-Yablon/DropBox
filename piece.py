@@ -538,10 +538,32 @@ class PieceBox:
         if 0 <= piece_index < len(self.pieces):
             piece = self.pieces[piece_index]
             if piece.can_rotate():
+                # Зберігаємо оригінальний стан фігури
+                original_shape = [row[:] for row in piece.shape]  # Глибока копія
+                original_angle = piece.rotation_angle
+                original_dimensions = piece._cached_dimensions
+                
+                # Пробуємо повернути фігуру
                 piece.rotate_90_clockwise()
-                # Перераховуємо позиції після обертання
-                self._calculate_piece_positions()
-                return True
+                
+                # Перевіряємо, чи нова фігура влізе в контейнер
+                new_width, new_height = self._get_piece_dimensions(piece)
+                
+                # Встановлюємо максимальні розміри для контейнера (з невеликим запасом)
+                max_container_width = self.width - 30  # Залишаємо відступи
+                max_container_height = self.height // 3 - 40  # Приблизно 1/3 висоти контейнера на фігуру
+                
+                if new_width <= max_container_width and new_height <= max_container_height:
+                    # Фігура влізе - зберігаємо поворот
+                    self._calculate_piece_positions()
+                    return True
+                else:
+                    # Фігура не влізе - відновлюємо оригінальний стан
+                    piece.shape = original_shape
+                    piece.rotation_angle = original_angle
+                    piece._cached_dimensions = original_dimensions
+                    print(f"⚠️ Неможливо повернути фігуру - вона не влізе в контейнер")
+                    return False
         return False
 
     def draw(self, surface):

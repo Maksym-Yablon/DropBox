@@ -66,8 +66,52 @@ class Grid:
         else:
             print(f"  Успішно розміщено всі {num_pieces} фігури!")
         
+        # Перевіряємо та очищуємо повні лінії після генерації
+        self._check_and_clear_initial_lines()
+        
+        # ТЕСТОВИЙ РЕЖИМ: Навмисно створюємо повну лінію для демонстрації (видаліть після тестування)
+        # self._create_test_full_line()
+        
         # Скидаємо очки після початкового розміщення
         self.score = 0
+
+    def _check_and_clear_initial_lines(self):
+        """Перевіряє та очищає повні лінії після початкової генерації"""
+        lines_cleared = 0
+        max_iterations = 10  # Максимум ітерацій для запобігання нескінченному циклу
+        
+        for iteration in range(max_iterations):
+            # Знаходимо всі повні рядки та стовпці
+            full_rows = []
+            full_cols = []
+            
+            # Перевіряємо рядки
+            for row in range(self.size):
+                if self.is_row_full(row):
+                    full_rows.append(row)
+            
+            # Перевіряємо стовпці
+            for col in range(self.size):
+                if self.is_col_full(col):
+                    full_cols.append(col)
+            
+            # Якщо немає повних ліній, виходимо
+            if not full_rows and not full_cols:
+                break
+            
+            # Очищуємо знайдені лінії
+            for row in full_rows:
+                for col in range(self.size):
+                    self.cells[row][col] = None
+            
+            for col in full_cols:
+                for row in range(self.size):
+                    self.cells[row][col] = None
+            
+            lines_cleared += len(full_rows) + len(full_cols)
+        
+        if lines_cleared > 0:
+            print(f"  ✅ Очищено {lines_cleared} повних ліній після початкової генерації")
 
     def _cache_grid_layout(self, cell_size):
         """Кешує розміщення сітки для оптимізації"""

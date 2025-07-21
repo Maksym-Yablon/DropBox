@@ -598,8 +598,6 @@ class SettingsMenu:
                     return "quit"
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        if global_cursor:
-                            global_cursor.cleanup()
                         return "back"
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button != 1:  # Тільки ліва кнопка миші
@@ -738,8 +736,6 @@ class SettingsMenu:
             if pygame.mouse.get_pressed()[0] and back_button_rect.collidepoint(mouse_pos):
                 # Відтворюємо звук кліку
                 sound_manager.play_click_sound()
-                if global_cursor:
-                    global_cursor.cleanup()
                 return "back"
             
             # Інструкція
@@ -1185,6 +1181,9 @@ class MenuSystem:
                                 break
                             elif button_id == 'settings':
                                 result = settings_menu.show_settings_screen()
+                                # Після повернення з налаштувань забезпечуємо правильність курсора
+                                if global_cursor:
+                                    global_cursor.ensure_custom_cursor()
                                 if result == "quit":
                                     if global_cursor:
                                         global_cursor.cleanup()
@@ -1289,6 +1288,10 @@ class CustomCursor:
             pygame.mouse.set_visible(False)
         else:
             pygame.mouse.set_visible(True)
+    
+    def ensure_custom_cursor(self):
+        """Гарантує, що показується тільки кастомний курсор"""
+        pygame.mouse.set_visible(False)
     
     def cleanup(self):
         """Очищення ресурсів та відновлення стандартного курсора"""

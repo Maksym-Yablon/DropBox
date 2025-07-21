@@ -213,6 +213,9 @@ def reset_game():
 # Показуємо заставку та меню
 menu_result = menu_system.main_menu_loop(records_manager, get_background_image(), game_save_manager)
 
+# Після меню забезпечуємо правильність курсора
+custom_cursor.ensure_custom_cursor()
+
 # Перевіряємо результат меню
 if menu_result == 'continue':
     # Завантажуємо збережену гру
@@ -281,6 +284,8 @@ while running:
                         reset_game()
                     elif pause_action == 'settings':
                         result = settings_menu.show_settings_screen()
+                        # Після повернення з налаштувань забезпечуємо правильність курсора
+                        custom_cursor.ensure_custom_cursor()
                         if result == "quit":
                             running = False
                     elif pause_action == 'help':

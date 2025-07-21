@@ -306,6 +306,15 @@ def handle_events():
             if waiting_for_rotate_click:
                 piece_index, _, _ = piece_box.get_piece_at_mouse(mouse_pos[0], mouse_pos[1])
                 if piece_index is not None:
+                    # Перевіряємо, чи можна повернути фігуру перед витратою купленого повороту
+                    piece = piece_box.pieces[piece_index]
+                    if not piece.can_rotate():
+                        print("⚠️ Цю фігуру не можна повернути - вона симетрична!")
+                        sound_manager.play_click_sound()  # Звук помилки замість витрати повороту
+                        # НЕ скидаємо waiting_for_rotate_click, щоб гравець міг вибрати іншу фігуру
+                        continue
+                    
+                    # Фігуру можна повернути - виконуємо поворот
                     if piece_box.rotate_piece(piece_index):
                         print("Фігуру повернуто!")
                         sound_manager.play_rotate_sound()
@@ -379,9 +388,12 @@ def draw_game_elements():
         piece_box.draw(screen)
 
         if waiting_for_rotate_click:
+            # Малюємо рамку навколо контейнера
             pygame.draw.rect(screen, UI_ROTATION_HIGHLIGHT_COLOR, 
                             (piece_box.start_x - 5, piece_box.start_y - 5, 
                             piece_box.width + 10, piece_box.height + 10), 3)
+            
+            # Текст підказки
             font = pygame.font.Font(UI_FONT_FAMILY_DEFAULT, UI_FONT_ROTATION_HINT)
             hint_text = font.render("Оберіть фігуру для обертання", True, UI_ROTATION_HINT_COLOR)
             text_x = piece_box.start_x + (piece_box.width - hint_text.get_width()) // 2

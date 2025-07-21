@@ -1238,22 +1238,22 @@ class CustomCursor:
             # Завантажуємо звичайний курсор
             original_normal = pygame.image.load("assets/sprites/ui/cursore1.png").convert_alpha()
             # Масштабуємо до 32x32
-            self.normal_cursor = pygame.transform.scale(original_normal, (32, 32))
+            self.normal_cursor = pygame.transform.scale(original_normal, (26, 26))
             print("Звичайний курсор завантажено: cursore1.png (32x32)")
             
             # Завантажуємо курсор натискання
             original_clicked = pygame.image.load("assets/sprites/ui/cursore2.png").convert_alpha()
             # Масштабуємо до 32x32
-            self.clicked_cursor = pygame.transform.scale(original_clicked, (32, 32))
+            self.clicked_cursor = pygame.transform.scale(original_clicked, (26, 26))
             print("Курсор натискання завантажено: cursore2.png (32x32)")
             
             # Встановлюємо поточний курсор
             self.current_cursor = self.normal_cursor
-            
-            # Розраховуємо зміщення для центрування курсора (тепер 16, 16 для 32x32)
-            self.cursor_offset_x = 16  # Половина від 32
-            self.cursor_offset_y = 16  # Половина від 32
-            
+
+            # Розраховуємо зміщення для центрування курсора (тепер 13, 13 для 26x26)
+            self.cursor_offset_x = 13  # Половина від 26
+            self.cursor_offset_y = 13  # Половина від 26
+
         except pygame.error as e:
             print(f"Помилка завантаження курсорів: {e}")
             # Якщо не вдалося завантажити, повертаємо стандартний курсор

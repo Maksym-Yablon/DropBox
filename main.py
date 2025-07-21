@@ -119,6 +119,9 @@ def load_saved_game():
             piece = Piece(piece_data["shape"], piece_data["color"])
             piece_box.pieces.append(piece)
         
+        # ВАЖЛИВО: Перераховуємо позиції фігур після завантаження
+        piece_box._calculate_piece_positions()
+        
         print(f"Гру завантажено! Очки: {saved_data['score']}")
         return True
         

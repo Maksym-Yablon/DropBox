@@ -55,28 +55,24 @@ class UIEffects:
         return alpha
     
     def draw_piece_preview(self, surface, grid, piece, grid_x, grid_y, cell_size=GRID_CELL_SIZE, valid=True):
-        """Малює попередній перегляд фігури з підсвічуванням"""
-        offset_x = (SCREEN_WIDTH - grid.size * cell_size) // 2
-        offset_y = (SCREEN_HEIGHT - grid.size * cell_size) // 2
-        
+        """Малює попередній перегляд фігури з підсвічуванням (завжди використовує кешовані офсети grid)"""
+        grid._cache_grid_layout(cell_size)
+        offset_x = grid._cached_offset_x
+        offset_y = grid._cached_offset_y
         # Колір підсвічування залежно від валідності (м'які кольори для темної теми)
         if valid:
             base_color = (120, 180, 120)  # М'який зелений
         else:
             base_color = (180, 100, 100)  # М'який червоний
-        
         # Отримуємо прозорість для мигання
         alpha = self.get_blink_alpha() if valid else 120
-        
         # Створюємо поверхню з прозорістю
         preview_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
-        
         for row in range(len(piece.shape)):
             for col in range(len(piece.shape[row])):
                 if piece.shape[row][col] == 1:
                     target_row = grid_y + row
                     target_col = grid_x + col
-                    
                     # Перевіряємо, чи в межах сітки
                     if (0 <= target_row < grid.size and 0 <= target_col < grid.size):
                         rect = pygame.Rect(
@@ -84,12 +80,10 @@ class UIEffects:
                             offset_y + target_row * cell_size,
                             cell_size, cell_size
                         )
-                        
                         # Малюємо підсвічування з мигающою прозорістю
                         color_with_alpha = (*base_color, alpha)
                         pygame.draw.rect(preview_surface, color_with_alpha, (0, 0, cell_size, cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
                         surface.blit(preview_surface, rect.topleft)
-                        
                         # Додаємо тонку рамку для кращої видимості
                         frame_color = (min(255, base_color[0] + 40), min(255, base_color[1] + 40), min(255, base_color[2] + 40))
                         pygame.draw.rect(surface, frame_color, rect, 2, border_radius=GRID_CELL_BORDER_RADIUS)
@@ -128,68 +122,39 @@ class UIEffects:
         return full_rows, full_cols
     
     def draw_clearing_preview(self, surface, grid, full_rows, full_cols, cell_size=GRID_CELL_SIZE):
-        """Малює мигаючий попередній перегляд очищення ліній (оригінальна логіка)"""
-        if not full_rows and not full_cols:
-            return
-        
-        offset_x = (SCREEN_WIDTH - grid.size * cell_size) // 2
-        offset_y = (SCREEN_HEIGHT - grid.size * cell_size) // 2
-        
-        # Отримуємо прозорість для мигання
+        """Підсвічує клітинки, які будуть очищені, використовуючи кешовані офсети та розміри grid"""
+        grid._cache_grid_layout(cell_size)
         alpha = self.get_blink_alpha()
-        
-        # Використовуємо колір з констант CLEAR_EFFECT_COLOR
-        clear_color = (*CLEAR_EFFECT_COLOR[:3], alpha)  # Беремо RGB з константи, альфу з мигання
-        
-        # Створюємо поверхню для ефекту
-        effect_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
-        
-        # Підсвічуємо рядки, що будуть очищені
+        clear_color = (*CLEAR_EFFECT_COLOR[:3], alpha)
+        # Підсвічуємо рядки
         for row in full_rows:
             for col in range(grid.size):
-                rect = pygame.Rect(
-                    offset_x + col * cell_size,
-                    offset_y + row * cell_size,
-                    cell_size, cell_size
-                )
-                # Малюємо тільки заливку з мигаючою прозорістю (без рамки)
-                pygame.draw.rect(effect_surface, clear_color, (0, 0, cell_size, cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
-                surface.blit(effect_surface, rect.topleft)
-        
-        # Підсвічуємо стовпці, що будуть очищені
+                cell_rect, cell_x, cell_y, inner_cell_size = grid._cached_cell_rects[row][col]
+                effect_surface = pygame.Surface((inner_cell_size, inner_cell_size), pygame.SRCALPHA)
+                pygame.draw.rect(effect_surface, clear_color, (0, 0, inner_cell_size, inner_cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
+                surface.blit(effect_surface, cell_rect.topleft)
+        # Підсвічуємо стовпці
         for col in full_cols:
             for row in range(grid.size):
-                rect = pygame.Rect(
-                    offset_x + col * cell_size,
-                    offset_y + row * cell_size,
-                    cell_size, cell_size
-                )
-                # Малюємо тільки заливку з мигаючою прозорістю (без рамки)
-                pygame.draw.rect(effect_surface, clear_color, (0, 0, cell_size, cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
-                surface.blit(effect_surface, rect.topleft)
+                cell_rect, cell_x, cell_y, inner_cell_size = grid._cached_cell_rects[row][col]
+                effect_surface = pygame.Surface((inner_cell_size, inner_cell_size), pygame.SRCALPHA)
+                pygame.draw.rect(effect_surface, clear_color, (0, 0, inner_cell_size, inner_cell_size), border_radius=GRID_CELL_BORDER_RADIUS)
+                surface.blit(effect_surface, cell_rect.topleft)
     
     def draw_enhanced_preview(self, surface, grid, piece, grid_x, grid_y, cell_size=GRID_CELL_SIZE):
-        """Комплексний попередній перегляд з підсвічуванням фігури та ліній (оригінальна логіка)"""
+        """Комплексний попередній перегляд з підсвічуванням фігури та ліній (завжди використовує кешовані офсети grid)"""
+        cell_size = GRID_CELL_SIZE
+        grid._cache_grid_layout(cell_size)
         valid = grid.can_place_piece(piece, grid_x, grid_y)
-        
         if valid:
-            # Запускаємо мигання, якщо ще не запущено
             if not self.is_blinking:
                 self.start_blinking()
-            
-            # Отримуємо лінії, які будуть очищені після розміщення фігури
             full_rows, full_cols = self.get_lines_to_clear_preview(grid, piece, grid_x, grid_y)
-            
-            # Спочатку малюємо підсвічування ліній, що будуть очищені (якщо є)
             if full_rows or full_cols:
                 self.draw_clearing_preview(surface, grid, full_rows, full_cols, cell_size)
-            
-            # Потім малюємо попередній перегляд фігури поверх
             self.draw_piece_preview(surface, grid, piece, grid_x, grid_y, cell_size, valid)
         else:
-            # Зупиняємо мигання для невалідних позицій
             self.stop_blinking()
-            # Малюємо червоний попередній перегляд
             self.draw_piece_preview(surface, grid, piece, grid_x, grid_y, cell_size, valid)
 
     def draw_simple_piece_box(self, surface, piece_box):

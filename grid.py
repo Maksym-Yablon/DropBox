@@ -120,7 +120,7 @@ class Grid:
             
         self._last_cell_size = cell_size
         self._cached_offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
-        self._cached_offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
+        self._cached_offset_y = (SCREEN_HEIGHT - self.size * cell_size) * 0.4 # Центруємо по вертикалі
         
         # Кешуємо головний прямокутник сітки
         grid_width = self.size * cell_size
@@ -291,13 +291,12 @@ class Grid:
             
     # ВАЛІДАЦІЯ РОЗМІЩЕННЯ ФІГУР
     def mouse_to_grid(self, mouse_x, mouse_y, cell_size=GRID_CELL_SIZE):
-        """Конвертує координати миші у координати сітки"""
-        offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
-        offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
-        
-        grid_x = (mouse_x - offset_x) // cell_size
-        grid_y = (mouse_y - offset_y) // cell_size
-        
+        """Конвертує координати миші у координати сітки (з урахуванням кешованих offset)"""
+        self._cache_grid_layout(cell_size)
+        offset_x = self._cached_offset_x
+        offset_y = self._cached_offset_y
+        grid_x = int((mouse_x - offset_x) // cell_size)
+        grid_y = int((mouse_y - offset_y) // cell_size)
         return grid_x, grid_y
     
     def can_place_piece(self, piece, grid_x, grid_y):
@@ -343,32 +342,16 @@ class Grid:
         return True
     
     def highlight_position(self, surface, grid_x, grid_y, piece, cell_size=GRID_CELL_SIZE, valid=True):
-        """Підсвічує позицію для розміщення фігури з урахуванням нової сітки"""
-        offset_x = (SCREEN_WIDTH - self.size * cell_size) // 2
-        offset_y = (SCREEN_HEIGHT - self.size * cell_size) // 2
-        
-        # Колір підсвічування
+        """Підсвічує позицію для розміщення фігури, використовуючи кешовані прямокутники клітинок"""
+        self._cache_grid_layout(cell_size)
         color = PREVIEW_VALID_COLOR if valid else PREVIEW_INVALID_COLOR
-        
-        # Відступ між клітинками (як у draw методі)
-        cell_margin = 3
-        inner_cell_size = cell_size - cell_margin
-        
         for row in range(len(piece.shape)):
             for col in range(len(piece.shape[row])):
                 if piece.shape[row][col] == 1:
                     target_row = grid_y + row
                     target_col = grid_x + col
-                    
-                    # Перевіряємо, чи в межах екрану
                     if (0 <= target_row < self.size and 0 <= target_col < self.size):
-                        # Позиція клітинки з відступами (як у draw методі)
-                        cell_x = offset_x + target_col * cell_size + cell_margin // 2
-                        cell_y = offset_y + target_row * cell_size + cell_margin // 2
-                        
-                        cell_rect = pygame.Rect(cell_x, cell_y, inner_cell_size, inner_cell_size)
-                        
-                        # Створюємо поверхню з прозорістю
+                        cell_rect, cell_x, cell_y, inner_cell_size = self._cached_cell_rects[target_row][target_col]
                         highlight_surface = pygame.Surface((inner_cell_size, inner_cell_size), pygame.SRCALPHA)
                         pygame.draw.rect(highlight_surface, color, (0, 0, inner_cell_size, inner_cell_size), border_radius=8)
                         surface.blit(highlight_surface, cell_rect.topleft)

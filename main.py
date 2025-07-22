@@ -553,7 +553,7 @@ def draw_game_elements():
     draw_mobile_header(screen, grid.score, best_score)
     
     # Малюємо ігрове поле
-    grid.draw(screen)
+    grid.draw(screen, cell_size=GRID_CELL_SIZE)
     
     # Малюємо рамку (якщо потрібно)
     frame_manager.update_frame(grid.score)
@@ -567,10 +567,10 @@ def draw_game_elements():
         draw_mobile_ad_space(screen)
 
         if dragging and dragged_piece:
-            grid_x, grid_y = grid.mouse_to_grid(mouse_pos[0], mouse_pos[1])
+            grid_x, grid_y = grid.mouse_to_grid(mouse_pos[0], mouse_pos[1], cell_size=GRID_CELL_SIZE)
             target_grid_x = grid_x - drag_block_col
             target_grid_y = grid_y - drag_block_row
-            ui_effects.draw_enhanced_preview(screen, grid, dragged_piece, target_grid_x, target_grid_y)
+            ui_effects.draw_enhanced_preview(screen, grid, dragged_piece, target_grid_x, target_grid_y, cell_size=GRID_CELL_SIZE)
         else:
             ui_effects.stop_blinking()
 

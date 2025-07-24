@@ -69,23 +69,34 @@ class FrameManager:
         return False  # Рамка не змінилася
     
     def draw(self, screen):
-        """Малює рамку навколо ігрової сітки"""
+        """Малює рамку навколо ігрової сітки, автоматично підлаштовуючи позицію та розмір під сітку"""
         if self.current_frame is None:
             return
-        
-        # Рамка просто обрамляє існуючу ігрову сітку
-        # Не змінює позиціонування інших контейнерів
-        grid_width = GRID_SIZE * GRID_CELL_SIZE
-        grid_height = GRID_SIZE * GRID_CELL_SIZE
-        
-        frame_width = self.current_frame.get_width()
-        frame_height = self.current_frame.get_height()
-        
-        # Центруємо рамку точно навколо ігрової сітки (використовуємо GRID_X, GRID_Y з constants.py)
-        frame_x = GRID_X - (frame_width - grid_width) // 2
-        frame_y = GRID_Y - (frame_height - grid_height) // 2
 
-        screen.blit(self.current_frame, (frame_x, frame_y))
+        # Використовуємо точну ширину сітки з constants (через глобальний імпорт)
+        grid_width = GRID_CELL_SIZE * GRID_SIZE
+        grid_height = GRID_CELL_SIZE * GRID_SIZE  # квадратна сітка
+        grid_x = GRID_X
+        grid_y = GRID_Y
+
+        # Множник для краси (1.0 = ідеально по краях, 1.1 = з запасом)
+        FRAME_SCALE = 1.2
+        target_width = int(grid_width * FRAME_SCALE)
+        orig_width = self.current_frame.get_width()
+        orig_height = self.current_frame.get_height()
+        scale_factor = target_width / orig_width
+        target_height = int(orig_height * scale_factor)
+
+        # Масштабуємо рамку
+        scaled_frame = pygame.transform.smoothscale(self.current_frame, (target_width, target_height))
+
+        # Центруємо рамку точно по сітці
+        frame_x = grid_x - (scaled_frame.get_width() - grid_width) // 2
+        frame_y = grid_y - (scaled_frame.get_height() - grid_height) // 2
+
+        frame_y -=  int(scaled_frame.get_height() * 0.076)  # Підняти рамку вгору на 7.3% від її висоти
+
+        screen.blit(scaled_frame, (frame_x, frame_y))
     
     def get_current_frame_info(self):
         """Повертає інформацію про поточну рамку"""

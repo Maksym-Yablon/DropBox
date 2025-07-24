@@ -8,7 +8,7 @@ import random
 import math
 
 class AdaptiveMobileConfig:
-    def __init__(self, test_mode=True):
+    def __init__(self, test_mode=False):
         self.TEST_MODE = test_mode
         
         # Базові розміри екрану
@@ -26,9 +26,9 @@ class AdaptiveMobileConfig:
         """Розрахунок всіх адаптивних розмірів з перевірками"""
         
         # ===== БАЗОВІ ВІДСТУПИ =====
-        # Відступи залежать від розміру екрану
-        self.MOBILE_SIDE_MARGIN = max(20, int(self.SCREEN_WIDTH * 0.037))  # ~3.7% від ширини
-        
+        # Відступи залежать від розміру екрану540
+        self.MOBILE_SIDE_MARGIN = max(20, int(self.SCREEN_WIDTH * 0.115))  # ~11.5% від ширини налаштування розміру сітки
+
         # ===== ВЕРХНЯ ПАНЕЛЬ =====
         # Адаптивна висота верхньої панелі
         self.MOBILE_TOP_BAR_HEIGHT = max(60, int(self.SCREEN_HEIGHT * 0.083))  # ~8.3%
@@ -97,7 +97,7 @@ class AdaptiveMobileConfig:
         self.GRID_Y = self.MOBILE_HEADER_HEIGHT + self.CONTAINER_SPACING
 
         # Координата Y для графічної рамки (frame.py) — можна налаштовувати окремо
-        self.GRID_Y_FRAME = self.GRID_Y + 100 # За замовчуванням співпадає, але можна змінити окремо
+        self.GRID_Y_FRAME = self.GRID_Y  # За замовчуванням співпадає, але можна змінити окремо
 
         # Якщо сітка не квадратна, центруємо її вертикально в доступному просторі
         if self.GRID_HEIGHT != self.actual_grid_width:
@@ -159,6 +159,7 @@ class AdaptiveMobileConfig:
             print(f"⚠️ НЕДОВИКОРИСТАННЯ: {remaining}px")
         else:
             print(f"✅ ОПТИМАЛЬНО: залишок {remaining}px")
+
 
 # Створюємо конфігурацію і експортуємо змінні
 config = AdaptiveMobileConfig(test_mode=True)
